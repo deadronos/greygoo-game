@@ -1,0 +1,86 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 30px;
+}
+
+.empty {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.threat {
+  padding: 8px 10px;
+  border: 1px solid var(--danger);
+  background: rgba(255, 77, 94, 0.08);
+  border-radius: 3px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-bright);
+}
+
+.name {
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.tier {
+  color: var(--warn);
+  font-size: 9px;
+}
+
+.hpBar {
+  margin-top: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hpFill {
+  height: 100%;
+  background: var(--danger);
+  transition: width 0.3s;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.desc {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.meter {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.meterLabel {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  margin-bottom: 4px;
+}
+
+.meterHint {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.facility {
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  text-align: right;
+}

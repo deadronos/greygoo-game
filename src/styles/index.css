@@ -1,0 +1,118 @@
+/* =====================================================
+   THE ENTROPIC DEVOURER — Global styles
+   ----------------------------------------------------------
+   Only cross-cutting rules that need to live at the
+   document level:
+     - CSS custom properties (the design tokens)
+     - Base body / html styles
+     - .hidden utility
+     - Full-bleed overlays (scanlines, vignette)
+     - Animations consumed from non-CSS-module components
+       (.click-burst, .critical-flash)
+   Everything else lives in component-scoped CSS modules.
+   ===================================================== */
+
+:root {
+  --bg-0: #06080a;
+  --bg-1: #0b1014;
+  --bg-2: #11181f;
+  --bg-3: #18222c;
+  --line: #1e2a36;
+  --line-bright: #2e4256;
+  --text: #b9c8d4;
+  --text-dim: #6c7d8c;
+  --text-bright: #e6f1fa;
+  --accent: #58e1c4;
+  --accent-dim: #2c8a78;
+  --warn: #ffae3b;
+  --danger: #ff4d5e;
+  --bio: #7bd66a;
+  --sil: #8aa6c2;
+  --met: #d8b765;
+  --nan: #c89bff;
+  --heat-cool: #3b82f6;
+  --heat-mid: #ffae3b;
+  --heat-hot: #ff4d5e;
+  --heat-melt: #ff2bd6;
+  --shadow-glow: 0 0 12px rgba(88, 225, 196, 0.25);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: "JetBrains Mono", "Fira Code", "Menlo", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(88, 225, 196, 0.06), transparent 60%),
+    radial-gradient(1000px 500px at 90% 110%, rgba(200, 155, 255, 0.05), transparent 60%),
+    linear-gradient(180deg, #06080a 0%, #04060a 100%);
+}
+
+/* Scanlines + vignette — full-bleed decoration */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px 4px);
+  mix-blend-mode: overlay;
+  animation: scanflick 6s steps(60) infinite;
+}
+
+@keyframes scanflick {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.7; }
+}
+
+#vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+  box-shadow: inset 0 0 220px rgba(0, 0, 0, 0.85);
+}
+
+/* Display utility */
+.hidden { display: none !important; }
+
+/* Bond-button click particles — created imperatively */
+.click-burst {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: var(--accent);
+  box-shadow: 0 0 10px currentColor;
+  animation: burst 0.6s ease-out forwards;
+}
+
+@keyframes burst {
+  to {
+    transform: translate(var(--tx), var(--ty)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Critical-flash class is toggled on <body> during runaway heat */
+.critical-flash {
+  animation: criticalflash 0.7s steps(8) infinite;
+}
+
+@keyframes criticalflash {
+  0%, 100% { background-color: rgba(255, 77, 94, 0); }
+  50%      { background-color: rgba(255, 77, 94, 0.18); }
+}

@@ -1,0 +1,65 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: var(--accent);
+  background: rgba(88, 225, 196, 0.06);
+}
+
+.card.owned {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.card.owned:hover {
+  border-color: var(--line);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.card.unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.info {
+  flex: 1;
+}
+
+.name {
+  font-size: 12px;
+  color: var(--text-bright);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.desc {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.cost {
+  font-size: 11px;
+  color: var(--warn);
+  white-space: nowrap;
+}
+
+.card.owned .cost {
+  color: var(--accent);
+}

@@ -1,0 +1,27 @@
+.panel {
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 16, 0.7);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.head {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  /* keeps flex parent readable when no titleRight */
+}
+
+.body {
+  /* passthrough */
+}

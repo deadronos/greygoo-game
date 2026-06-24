@@ -1,0 +1,28 @@
+.log {
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 11px;
+  line-height: 1.5;
+  padding-right: 4px;
+}
+
+.log::-webkit-scrollbar { width: 4px; }
+.log::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 2px; }
+
+.line {
+  display: flex;
+  gap: 6px;
+  padding: 2px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+  animation: logfade 0.3s ease;
+}
+
+@keyframes logfade { from { opacity: 0; transform: translateY(-3px); } }
+
+.time { color: var(--text-dim); flex-shrink: 0; }
+.msg  { flex: 1; color: var(--text); }
+
+.line.warn   .msg { color: var(--warn); }
+.line.danger .msg { color: var(--danger); }
+.line.good   .msg { color: var(--bio); }
+.line.info   .msg { color: var(--accent); }
