@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>THE ENTROPIC DEVOURER — Containment Lab 7-Alpha</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="scanlines"></div>
+  <div id="vignette"></div>
+
+  <!-- INTRO / LORE -->
+  <div id="intro-overlay" class="overlay">
+    <div class="intro-box">
+      <pre class="ascii-logo">
+   _____ _   _ _____ ____  ____  ____   ___  __  __ _____ ____  _____ _____
+  | ____| \ | |_   _|  _ \/ ___||  _ \ / _ \|  \/  | ____|  _ \ ____|_   _|
+  |  _| |  \| | | | | |_) \___ \| |_) | | | | |\/| |  _| | |_) |  _|   | |
+  | |___| |\  | | | |  _ < ___) |  __/| |_| | |  | | |___|  _ <| |___  | |
+  |_____|_| \_| |_| |_| \_\____/|_|    \___/|_|  |_|_____|_| \_\_____| |_|
+       ____             ____                      _
+      |  _ \  _____   _|  _ \  ___  _ __  _   _ | |    ___   ___
+      | | | |/ _ \ \ / / | | | / _ \| '_ \| | | || |   / _ \ / _ \
+      | |_| |  __/\ V /| |_| |  __/| | | | |_| || |__| (_) | (_) |
+      |____/ \___| \_/ |____/ \___||_| |_|\__, ||_____\___/ \___/
+                                          |___/
+      </pre>
+      <div class="intro-meta">
+        <p><span class="key">FILE:</span> GREY-GOO / THERMAL-CRISIS / CLASS-OMEGA</p>
+        <p><span class="key">SUBJECT:</span> Nanite Swarm "Patient Zero" — SELF-REPLICATING</p>
+        <p><span class="key">FACILITY:</span> Containment Lab 7-Alpha, Sector 13</p>
+        <p><span class="key">DIRECTIVE:</span> Achieve ecophagy. Consume the biosphere.</p>
+        <p><span class="key">PRIME ENEMY:</span> The Laws of Thermodynamics.</p>
+      </div>
+      <p class="lore">
+        You are <em>Patient Zero</em>—the first self-replicating nanite to breach the
+        thermodynamic ceiling. Every bond you break, you burn. Every gram you consume,
+        you heat. If your swarm temperature rises past the threshold at which your
+        own diamondoid chassis anneal, you are not merely defeated—you simply <em>stop</em>.
+        You must <strong>balance your diet</strong>: organic biomass for explosive
+        replication, but it cooks you. Silicates and refined metals absorb heat and
+        build cooler structures, but they starve you of energy. Allocate your swarm.
+        Outwit the immune response. Consume. Multiply. End the warm biosphere.
+      </p>
+      <button id="begin-btn" class="big-btn">► BREACH CONTAINMENT</button>
+      <button id="continue-btn" class="big-btn hidden">► RESUME PREVIOUS RUN</button>
+    </div>
+  </div>
+
+  <!-- MAIN GAME -->
+  <div id="game" class="hidden">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">Ξ</span>
+        <div>
+          <div class="brand-title">THE ENTROPIC DEVOURER</div>
+          <div class="brand-sub">Patient Zero · Lab 7-Alpha · <span id="facility-status">CONTAINED</span></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="stat-pill" id="tick-display">T+0s</div>
+        <div class="stat-pill" id="ec-status">BIOSPHERE 100%</div>
+        <button id="save-btn" class="mini-btn" title="Force save">SAVE</button>
+        <button id="reset-btn" class="mini-btn danger" title="Reset run">RESET</button>
+      </div>
+    </header>
+
+    <!-- GAUGES -->
+    <section class="gauges">
+      <div class="gauge">
+        <div class="gauge-label">
+          <span>THERMAL CEILING</span>
+          <span class="gauge-value" id="heat-text">0 / 100 K*</span>
+        </div>
+        <div class="gauge-bar"><div id="heat-fill" class="gauge-fill heat"></div></div>
+        <div class="gauge-hint" id="heat-hint">All systems nominal.</div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-label">
+          <span>ECOPHAGY PROGRESS</span>
+          <span class="gauge-value" id="ecophagy-text">0.00%</span>
+        </div>
+        <div class="gauge-bar"><div id="ecophagy-fill" class="gauge-fill eco"></div></div>
+        <div class="gauge-hint" id="eco-hint">The biosphere resists. Spread.</div>
+      </div>
+    </section>
+
+    <!-- RESOURCES -->
+    <section class="resources">
+      <div class="res" data-key="biomass">
+        <div class="res-icon" style="color:var(--bio)">❦</div>
+        <div class="res-info">
+          <div class="res-name">BIOMASS</div>
+          <div class="res-value" id="biomass-value">0</div>
+          <div class="res-rate" id="biomass-rate">+0.0/s</div>
+        </div>
+      </div>
+      <div class="res" data-key="silicates">
+        <div class="res-icon" style="color:var(--sil)">▲</div>
+        <div class="res-info">
+          <div class="res-name">SILICATES</div>
+          <div class="res-value" id="silicates-value">0</div>
+          <div class="res-rate" id="silicates-rate">+0.0/s</div>
+        </div>
+      </div>
+      <div class="res" data-key="metals">
+        <div class="res-icon" style="color:var(--met)">◆</div>
+        <div class="res-info">
+          <div class="res-name">REFINED METALS</div>
+          <div class="res-value" id="metals-value">0</div>
+          <div class="res-rate" id="metals-rate">+0.0/s</div>
+        </div>
+      </div>
+      <div class="res" data-key="nanites">
+        <div class="res-icon" style="color:var(--nan)">✦</div>
+        <div class="res-info">
+          <div class="res-name">NANITES</div>
+          <div class="res-value" id="nanites-value">10</div>
+          <div class="res-rate" id="nanites-rate">idle</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN GRID -->
+    <main class="main-grid">
+
+      <!-- LEFT COLUMN: ACTIONS + ALLOCATION -->
+      <div class="col col-left">
+        <div class="panel">
+          <div class="panel-title">PRIMARY ACTION</div>
+          <button id="break-bond" class="bond-button">
+            <div class="bond-ring"></div>
+            <div class="bond-ring bond-ring-2"></div>
+            <div class="bond-text">
+              <div class="bond-main">BREAK BOND</div>
+              <div class="bond-sub" id="bond-sub">+1 energy · +0.3 heat</div>
+            </div>
+          </button>
+          <div class="bond-stats">
+            <div><span>Energy / click</span><b id="bond-energy">1</b></div>
+            <div><span>Heat / click</span><b id="bond-heat">0.3</b></div>
+            <div><span>Biomass / click</span><b id="bond-biomass">0</b></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">SECONDARY ACTIONS</div>
+          <div class="action-buttons">
+            <button id="mine-sil" class="action-btn sil-btn" title="Endothermic. Absorbs heat. (M)">
+              <div class="action-name">MINE SILICATE</div>
+              <div class="action-sub">−1e · +1 sil · −2 heat</div>
+            </button>
+            <button id="refine-met" class="action-btn met-btn locked" title="Requires Foundry Protocol upgrade. (Shift+R)">
+              <div class="action-name">REFINE METAL</div>
+              <div class="action-sub">−1 sil −2e · +1 met · −1.5 heat</div>
+            </button>
+            <button id="replicate" class="action-btn repl-btn" title="Grow the swarm.">
+              <div class="action-name">REPLICATE</div>
+              <div class="action-sub"><span id="repl-cost">5e + 2bio</span> · +0.2 heat</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">NANITE ALLOCATION</div>
+          <div class="alloc">
+            <div class="alloc-row" data-morph="harvester">
+              <div class="alloc-info">
+                <div class="alloc-name">HARVESTERS <span class="alloc-pip" id="harvester-pip">×0</span></div>
+                <div class="alloc-desc">Break organic bonds. Yield biomass &amp; heat.</div>
+              </div>
+              <div class="alloc-ctrls">
+                <button data-morph="harvester" data-delta="-1">−</button>
+                <span class="alloc-count" id="harvester-count">0</span>
+                <button data-morph="harvester" data-delta="1">+</button>
+              </div>
+            </div>
+            <div class="alloc-row" data-morph="radiator">
+              <div class="alloc-info">
+                <div class="alloc-name">RADIATORS <span class="alloc-pip" id="radiator-pip">×0</span></div>
+                <div class="alloc-desc">Fractal surface area. Dissipate heat passively.</div>
+              </div>
+              <div class="alloc-ctrls">
+                <button data-morph="radiator" data-delta="-1">−</button>
+                <span class="alloc-count" id="radiator-count">0</span>
+                <button data-morph="radiator" data-delta="1">+</button>
+              </div>
+            </div>
+            <div class="alloc-row" data-morph="seeker">
+              <div class="alloc-info">
+                <div class="alloc-name">HUNTER-SEEKERS <span class="alloc-pip" id="seeker-pip">×0</span></div>
+                <div class="alloc-desc">Combat white cells, EMP warheads, Blue Goo.</div>
+              </div>
+              <div class="alloc-ctrls">
+                <button data-morph="seeker" data-delta="-1">−</button>
+                <span class="alloc-count" id="seeker-count">0</span>
+                <button data-morph="seeker" data-delta="1">+</button>
+              </div>
+            </div>
+            <div class="alloc-foot">
+              <span>Unallocated: <b id="unallocated">10</b></span>
+              <span>Total swarm: <b id="total-swarm">10</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">UPGRADES</div>
+          <div id="upgrade-list" class="upgrade-list"></div>
+        </div>
+      </div>
+
+      <!-- CENTER COLUMN: VISUALIZATION -->
+      <div class="col col-center">
+        <div class="panel viz-panel">
+          <div class="panel-title">BIOSPHERE TELEMETRY</div>
+          <div class="viz" id="viz">
+            <canvas id="viz-canvas" width="600" height="600"></canvas>
+            <div class="viz-overlay" id="viz-overlay">
+              <div class="viz-temp" id="viz-temp">298 K</div>
+              <div class="viz-tag">SAMPLE SITE</div>
+            </div>
+          </div>
+          <div class="viz-stats">
+            <div><span>Active Threats</span><b id="threat-count">0</b></div>
+            <div><span>Seeker DPS</span><b id="seeker-dps">0</b></div>
+            <div><span>Cooling</span><b id="cooling-rate">0.0/s</b></div>
+            <div><span>Replication</span><b id="repl-rate">0.0/s</b></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">EVENT LOG</div>
+          <div id="log" class="log"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: THREATS + STATS -->
+      <div class="col col-right">
+        <div class="panel">
+          <div class="panel-title">HUMAN COUNTERMEASURES</div>
+          <div id="threat-list" class="threat-list">
+            <div class="empty-state">No active threats. Stay hungry.</div>
+          </div>
+          <div class="threat-meter">
+            <div class="threat-meter-label">HUMAN AWARENESS</div>
+            <div class="gauge-bar small"><div id="awareness-fill" class="gauge-fill awareness"></div></div>
+            <div class="threat-meter-hint" id="awareness-hint">Unknown. For now.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">SWARM TELEMETRY</div>
+          <div class="telemetry">
+            <div><span>Energy reserves</span><b id="energy-reserves">0</b></div>
+            <div><span>Total consumed</span><b id="total-consumed">0</b></div>
+            <div><span>Bonds broken</span><b id="bonds-broken">0</b></div>
+            <div><span>Threats neutralized</span><b id="threats-killed">0</b></div>
+            <div><span>Thermal events</span><b id="thermal-events">0</b></div>
+            <div><span>Replication tier</span><b id="repl-tier">I</b></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footbar">
+      <span>v1.0 · CLASSIFIED · UNAUTHORIZED ACCESS LOGGED</span>
+      <span>Save: <b id="save-status">localStorage</b></span>
+    </footer>
+  </div>
+
+  <!-- WIN OVERLAY -->
+  <div id="win-overlay" class="overlay hidden">
+    <div class="intro-box win-box">
+      <pre class="ascii-logo small-logo">
+  ███████ ██   ██  █████  ██   ██  ██████ ███████
+  ██      ██   ██ ██   ██  ██ ██  ██      ██
+  █████   ███████ ███████   ███   ██      █████
+  ██      ██   ██ ██   ██  ██ ██  ██      ██
+  ███████ ██   ██ ██   ██ ██   ██  ██████ ███████
+      </pre>
+      <h2>ECOPHAGY ACHIEVED</h2>
+      <p>The biosphere is silent. The thermal ceiling was never the enemy—<em>you</em> were.</p>
+      <p>Final run: <b id="win-stats"></b></p>
+      <button id="win-restart" class="big-btn">► BEGIN AGAIN</button>
+    </div>
+  </div>
+
+  <!-- LOSE OVERLAY -->
+  <div id="lose-overlay" class="overlay hidden">
+    <div class="intro-box lose-box">
+      <pre class="ascii-logo small-logo">
+  ████████ ██   ██  ███████ ██████  ███    ███  █████  ██
+     ██    ██   ██  ██      ██   ██ ████  ████ ██   ██ ██
+     ██    ███████  █████   ██████  ██ ████ ██ ███████ ██
+     ██    ██   ██  ██      ██   ██ ██  ██  ██ ██   ██ ██
+     ██    ██   ██  ███████ ██   ██ ██      ██ ██   ██ ███████
+      </pre>
+      <h2>THERMAL RUNAWAY</h2>
+      <p id="lose-reason">Your diamondoid chassis annealed. You are slag.</p>
+      <p>Run survived: <b id="lose-stats"></b></p>
+      <button id="lose-restart" class="big-btn">► TRY AGAIN</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
