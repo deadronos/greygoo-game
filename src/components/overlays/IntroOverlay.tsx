@@ -28,17 +28,14 @@ export function IntroOverlay() {
   const beginNewGame = useGameStore((s) => s.beginNewGame);
   const resumeGame = useGameStore((s) => s.resumeGame);
 
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      if (hasSave) resumeGame();
-      else beginNewGame();
-    }
-  }
+  // Keyboard handling lives entirely in useKeyboardShortcuts. Keeping a
+  // second onKeyDown here would double-fire Enter/Space and, because
+  // resumeGame loads the save while beginNewGame wipes it, could start
+  // a fresh game over an existing save when both run.
 
   return (
     <Overlay>
-      <div className={styles.box} onKeyDown={onKeyDown} tabIndex={0}>
+      <div className={styles.box}>
         <pre className={styles.ascii}>{LOGO}</pre>
 
         <div className={styles.meta}>

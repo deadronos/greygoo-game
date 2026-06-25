@@ -19,6 +19,17 @@ export function useKeyboardShortcuts() {
     }
 
     function onKey(e: KeyboardEvent) {
+      // If a <button> is focused, Enter / Space are handled natively by
+      // the button's onClick. Bail out so we don't double-fire the
+      // binding (e.g. a focused BREAK BOND button firing once via its
+      // click and again via this handler, or the intro buttons).
+      if (
+        (e.key === "Enter" || e.key === " ") &&
+        e.target instanceof HTMLButtonElement
+      ) {
+        return;
+      }
+
       // Intro screen: Enter / Space begin a new game.
       if (screen === "intro") {
         if (e.key === "Enter" || e.key === " ") {

@@ -89,6 +89,7 @@ export function createInitialState(): GameState {
     threatsKilled: 0,
     thermalEvents: 0,
     elapsed: 0,
+    biomassHarvested: 0,
 
     // threats
     threats: [],
@@ -171,6 +172,7 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
     threatsKilled:  NON_NEG(asFiniteNumber(merged.threatsKilled,  base.threatsKilled)),
     thermalEvents:  NON_NEG(asFiniteNumber(merged.thermalEvents,  base.thermalEvents)),
     elapsed:        NON_NEG(asFiniteNumber(merged.elapsed,        base.elapsed)),
+    biomassHarvested: NON_NEG(asFiniteNumber(merged.biomassHarvested, base.biomassHarvested)),
     nextThreatIn:   asFiniteNumber(merged.nextThreatIn,   base.nextThreatIn),
     harvYieldMul:   asFiniteNumber(merged.harvYieldMul,   1),
     harvHeatMul:    asFiniteNumber(merged.harvHeatMul,    1),
