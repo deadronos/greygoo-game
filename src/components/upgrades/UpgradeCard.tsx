@@ -9,7 +9,7 @@ import clsx from "clsx";
 
 import { selectState, useGameStore } from "@/store/gameStore";
 import { UPGRADES } from "@/systems/upgrades";
-import type { UpgradeDef, UpgradeId } from "@/systems/types";
+import type { ResourceKey, UpgradeDef, UpgradeId } from "@/systems/types";
 
 import styles from "./UpgradeCard.module.css";
 
@@ -53,8 +53,8 @@ export function UpgradeList() {
     <div className={styles.list}>
       {UPGRADES.map((u) => {
         const owned = !!state.upgrades[u.id as UpgradeId];
-        const canAfford = (Object.entries(u.cost) as [keyof typeof state, number][])
-          .every(([k, v]) => (state[k] as number) >= v);
+        const canAfford = (Object.entries(u.cost) as [ResourceKey, number][])
+          .every(([k, v]) => state[k] >= v);
         return (
           <UpgradeCard
             key={u.id}
