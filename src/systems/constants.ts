@@ -18,6 +18,13 @@ export const HEAT_WARNING = 60;
 export const HEAT_CRITICAL = 85;
 export const HEAT_RUNAWAY = 100;
 
+// Thermal damage / warning thresholds, expressed as fractions of the
+// player's heat cap (which grows with the Diamondoid Chassis upgrade).
+// This keeps behavior consistent regardless of the absolute cap.
+export const HEAT_WARNING_FRAC = 0.60;    // first efficiency dip
+export const HEAT_CRITICAL_FRAC = 0.85;   // warning band starts
+export const HEAT_RUNAWAY_FRAC = 1.0;     // damage kicks in at 100% of cap
+
 // --- Starting conditions --------------------------------------------------
 export const STARTING_NANITES = 10;
 
