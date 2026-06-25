@@ -4,14 +4,14 @@
 
 import { Panel } from "@/components/panels/Panel";
 import { Stat } from "@/components/panels/Stat";
-import { selectDerived, selectState, useGameStore } from "@/store/gameStore";
+import { selectDerived, selectState, shallow, useGameStore } from "@/store/gameStore";
 
 import { BiosphereViz } from "./BiosphereViz";
 import styles from "./VizPanel.module.css";
 
 export function VizPanel() {
   const state = useGameStore(selectState);
-  const derived = useGameStore(selectDerived);
+  const derived = useGameStore(selectDerived, shallow);
 
   return (
     <Panel title="BIOSPHERE TELEMETRY">

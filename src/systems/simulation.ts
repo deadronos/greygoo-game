@@ -96,7 +96,6 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   if (state.heat > runThreshold) efficiency *= 0.25;
   const biomassProd = HARVESTER_OUTPUT * state.harvYieldMul * H * efficiency;
   state.biomass += biomassProd * dt;
-  state.totalConsumed += biomassProd * dt;
 
   // ---- passive resource trickle --------------------------------------
   state.silicates += state.silAutoAdd * dt;
@@ -135,15 +134,16 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   if (state.heat > runThreshold) {
     const dmg = (state.heat - runThreshold) * HEAT_DAMAGE_RATE * dt;
     const loss = Math.min(state.nanites, dmg);
-    state.nanites = Math.max(0, state.nanites - loss);
-    state.nanitesLostToHeat += loss;
-    if (Math.random() < HEAT_DAMAGE_LOG_CHANCE) {
-      state.thermalEvents += 1;
-      results.push({
-        ok: false,
-        msg: `THERMAL EVENT: ${loss.toFixed(2)} nanites lost to annealing.`,
-        level: "danger",
-      });
+    if (loss > 0) {
+      state.nanites = Math.max(0, state.nanites - loss);
+      if (Math.random() < HEAT_DAMAGE_LOG_CHANCE) {
+        state.thermalEvents += 1;
+        results.push({
+          ok: false,
+          msg: `THERMAL EVENT: ${loss.toFixed(2)} nanites lost to annealing.`,
+          level: "danger",
+        });
+      }
     }
   } else if (state.heat > critThreshold && Math.random() < 0.04) {
     results.push({

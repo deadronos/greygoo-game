@@ -5,7 +5,7 @@
  * via derived selectors.
  */
 
-import { selectState, selectDerived, useGameStore } from "@/store/gameStore";
+import { selectState, selectDerived, shallow, useGameStore } from "@/store/gameStore";
 import { fmt, fmtInt } from "@/systems/format";
 import type { DerivedStats } from "@/systems/simulation";
 
@@ -14,7 +14,7 @@ import styles from "./ResourceGrid.module.css";
 
 export function ResourceGrid() {
   const state = useGameStore(selectState);
-  const derived: DerivedStats = useGameStore(selectDerived);
+  const derived: DerivedStats = useGameStore(selectDerived, shallow);
 
   const nanitesIdle =
     state.nanites -
