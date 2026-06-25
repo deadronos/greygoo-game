@@ -5,8 +5,6 @@
  * single-file diff.
  */
 
-import type { LogLevel } from "./types";
-
 // --- Loops & timing -------------------------------------------------------
 export const TICK_MS = 100;
 export const AUTOSAVE_MS = 5_000;
@@ -27,6 +25,7 @@ export const HEAT_RUNAWAY_FRAC = 1.0;     // damage kicks in at 100% of cap
 
 // --- Starting conditions --------------------------------------------------
 export const STARTING_NANITES = 10;
+export const INITIAL_BIOMASS = 5;
 
 // --- Click "Break Bond" ---------------------------------------------------
 export const CLICK_ENERGY = 1;
@@ -59,6 +58,11 @@ export const ECOPHAGY_GAIN_BASE = 0.015;
 
 // --- Heat lockout (chassis too hot to act) --------------------------------
 export const HEAT_LOCKOUT_MULTIPLIER = 1.2;
+
+// Fraction of heatCap at which we attribute a loss to thermal
+// annealing in the lose-screen reason. Above this fraction, we say
+// "you melted"; below, we blame the human countermeasures.
+export const HEAT_LOSE_REASON_FRAC = 0.99;
 
 // --- Thermal damage formula ----------------------------------------------
 export const HEAT_DAMAGE_RATE = 0.05;
@@ -135,5 +139,3 @@ export const REPLICATION_TIERS: { max: number; label: string }[] = [
   { max: 2500,  label: "IV"  },
   { max: Infinity, label: "V" },
 ];
-
-export const DEFAULT_LOG_LEVEL: LogLevel = "";

@@ -12,6 +12,7 @@
  */
 
 import { create } from "zustand";
+import { shallow } from "zustand/shallow";
 
 import {
   breakBond,
@@ -23,6 +24,7 @@ import {
 } from "@/systems/actions";
 import type { ActionOutcome } from "@/systems/actions";
 import { LOG_MAX_LINES } from "@/systems/constants";
+import { HEAT_LOSE_REASON_FRAC, INITIAL_BIOMASS } from "@/systems/constants";
 import { saveGame, loadGame, wipeSave } from "@/systems/save";
 import { checkEndCondition, derivedStats, simulate } from "@/systems/simulation";
 import type { DerivedStats } from "@/systems/simulation";
@@ -283,14 +285,23 @@ export const useGameStore = create<GameStore>((set, get) => {
 
       const { results, nextThreatId: nextId } = simulate(state, nextThreatId);
 
-      // Compose all updates in a single `set` call.
+      // Compose all updates in a single `set` call. Pulse events
+      // emitted by the simulation (e.g. threat-kill resource drops)
+      // are handled here, not just in applyOutcome — player actions
+      // already go through that helper.
       set((s) => {
         let log = s.log;
+        let pulses = s.pulses;
         for (const r of results) {
           if (r.msg) log = pushLog(log, r.msg, r.level);
+          if (r.pulse) {
+            const out = pushPulse(pulses, r.pulse);
+            pulses = out.pulses;
+          }
         }
         return {
           log,
+          pulses,
           state: { ...state }, // bump
           nextThreatId: nextId,
         };
@@ -300,7 +311,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       // is the only thing that changes.
       const outcome = checkEndCondition(state);
       if (outcome === "won") {
-        const totalConsumed = Math.floor(state.totalConsumed);
+        const totalConsumed = Math.max(0, Math.floor(state.biomass - INITIAL_BIOMASS));
         const winStats =
           `Time ${fmtTime(state.elapsed)}, ${state.threatsKilled} threats killed, ` +
           `biosphere consumed in ${totalConsumed.toLocaleString()} units.`;
@@ -310,7 +321,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           `Survived ${fmtTime(state.elapsed)}, ${state.ecophagy.toFixed(2)}% ecophagy, ` +
           `${state.threatsKilled} threats killed.`;
         const loseReason =
-          state.heat > heatCap(state) * 0.99
+          state.heat > heatCap(state) * HEAT_LOSE_REASON_FRAC
             ? "Your diamondoid chassis annealed. You are slag."
             : "Your swarm was destroyed by human countermeasures.";
         set({ screen: "lose", loseStats, loseReason });
@@ -351,4 +362,17 @@ export const selectLog = (s: GameStore): LogEntry[] => s.log;
 export const selectPulses = (s: GameStore): PulseEvent[] => s.pulses;
 export const selectSaveFlash = (s: GameStore): string => s.saveFlash;
 
-export const selectDerived = (s: GameStore): DerivedStats => derivedStats(s.state);
+// Memoize derived stats by the upstream state ref so identical inputs
+// don't allocate a new DerivedStats object every store update.
+let _lastDerivedState: GameState | null = null;
+let _lastDerived: DerivedStats | null = null;
+export const selectDerived = (s: GameStore): DerivedStats => {
+  if (s.state !== _lastDerivedState) {
+    _lastDerivedState = s.state;
+    _lastDerived = derivedStats(s.state);
+  }
+  return _lastDerived!;
+};
+
+// Re-export the shallow comparator so call sites can opt in.
+export { shallow };

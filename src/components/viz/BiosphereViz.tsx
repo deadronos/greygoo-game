@@ -8,7 +8,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { selectDerived, selectState, useGameStore } from "@/store/gameStore";
+import { selectDerived, selectState, shallow, useGameStore } from "@/store/gameStore";
 import { HEAT_WARNING, HEAT_CRITICAL } from "@/systems/constants";
 import { heatCap } from "@/systems/state";
 
@@ -197,7 +197,7 @@ export function BiosphereViz() {
   }, []);
 
   const state = useGameStore(selectState);
-  const derived = useGameStore(selectDerived);
+  const derived = useGameStore(selectDerived, shallow);
 
   const temperatureColor =
     state.heat < HEAT_WARNING ? "var(--accent)" :

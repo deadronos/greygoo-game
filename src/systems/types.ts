@@ -81,7 +81,6 @@ export interface GameState {
   bonds: number;
   threatsKilled: number;
   thermalEvents: number;
-  totalConsumed: number;
   elapsed: number;
 
   // threats
@@ -104,9 +103,6 @@ export interface GameState {
   autoAlloc: number;
   threatSuppression: number;
   canRefine: boolean;
-
-  // counters
-  nanitesLostToHeat: number;
 }
 
 /** A log entry shape for the UI. */

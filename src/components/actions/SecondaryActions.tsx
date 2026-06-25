@@ -4,7 +4,7 @@
 
 import { Panel } from "@/components/panels/Panel";
 import { ActionButton } from "@/components/panels/Button";
-import { useGameStore, selectDerived, selectState } from "@/store/gameStore";
+import { useGameStore, selectDerived, selectState, shallow } from "@/store/gameStore";
 import {
   METAL_REFINE_ENERGY,
   METAL_REFINE_SILICATE,
@@ -18,7 +18,7 @@ import styles from "./SecondaryActions.module.css";
 
 export function SecondaryActions() {
   const state = useGameStore(selectState);
-  const derived = useGameStore(selectDerived);
+  const derived = useGameStore(selectDerived, shallow);
   const clickMine = useGameStore((s) => s.clickMine);
   const clickRefine = useGameStore((s) => s.clickRefine);
   const clickReplicate = useGameStore((s) => s.clickReplicate);

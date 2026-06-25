@@ -14,13 +14,13 @@ import {
   HEAT_LOCKOUT_MULTIPLIER,
 } from "@/systems/constants";
 import { heatCap } from "@/systems/state";
-import { selectDerived, selectState } from "@/store/gameStore";
+import { selectDerived, selectState, shallow } from "@/store/gameStore";
 
 import styles from "./PrimaryAction.module.css";
 
 export function PrimaryAction() {
   const state = useGameStore(selectState);
-  const derived = useGameStore(selectDerived);
+  const derived = useGameStore(selectDerived, shallow);
   const clickBreakBond = useGameStore((s) => s.clickBreakBond);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
 
