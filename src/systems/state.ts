@@ -10,7 +10,27 @@ import {
   HEAT_CAP_BASE,
   STARTING_NANITES,
 } from "./constants";
-import type { GameState, SaveData } from "./types";
+import type { GameState, SaveData, Threat } from "./types";
+
+/** Type guard for an individual threat entry in a deserialized save. */
+function isValidThreat(t: unknown): t is Threat {
+  if (!t || typeof t !== "object") return false;
+  const o = t as Record<string, unknown>;
+  if (typeof o.id !== "number" || !Number.isFinite(o.id)) return false;
+  if (typeof o.hp !== "number" || !Number.isFinite(o.hp)) return false;
+  if (typeof o.maxHp !== "number" || !Number.isFinite(o.maxHp)) return false;
+  if (typeof o.dmg !== "number" || !Number.isFinite(o.dmg)) return false;
+  if (!o.type || typeof o.type !== "object") return false;
+  const tt = o.type as Record<string, unknown>;
+  return (
+    typeof tt.tier === "number"
+    && typeof tt.name === "string"
+    && typeof tt.desc === "string"
+    && typeof tt.maxHp === "number"
+    && typeof tt.dmg === "number"
+    && typeof tt.spawn === "number"
+  );
+}
 
 export function createInitialState(): GameState {
   return {
@@ -77,7 +97,14 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
     radiator: Math.max(0, state.allocation?.radiator ?? 0),
     seeker: Math.max(0, state.allocation?.seeker ?? 0),
   };
-  state.threats = Array.isArray(state.threats) ? state.threats : [];
+  // Drop malformed threats so a tampered save can't crash the sim.
+  state.threats = Array.isArray(state.threats)
+    ? state.threats.filter(isValidThreat)
+    : [];
   state.upgrades = state.upgrades ?? {};
-  return { state, nextThreatId: partial.nextThreatId ?? 1 };
+  const id =
+    typeof partial.nextThreatId === "number" && Number.isFinite(partial.nextThreatId)
+      ? partial.nextThreatId
+      : 1;
+  return { state, nextThreatId: id };
 }

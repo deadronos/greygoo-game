@@ -78,7 +78,11 @@ export const ENERGY_REGEN_PER_RADIATOR = 0.03;
 export const AWARENESS_FIRST_SPAWN = 8;
 export const THREAT_BASE_INTERVAL = 30;
 export const THREAT_MIN_INTERVAL = 6;
-export const THREAT_AWARENESS_FLOOR = 6;
+// `canSpawnThreat` and `pickThreatType` must agree, otherwise the
+// scheduler runs in a tight loop every tick in the gap band. We keep
+// a single source of truth and have the floor mirror the first-spawn
+// threshold. Update AWARENESS_FIRST_SPAWN above to change both.
+export const THREAT_AWARENESS_FLOOR = AWARENESS_FIRST_SPAWN;
 export const THREAT_MAX_TIER_DIVISOR = 25;
 
 // --- Auto-allocate from idle nanites --------------------------------------
@@ -96,12 +100,15 @@ export const AWARENESS_LABELS: { max: number; label: string; color: string }[] =
   { max: 101, label: "ALERT",       color: "var(--danger)" },
 ];
 
+// HEAT_HINT_BANDS is built from fractional thresholds so the hints
+// stay consistent with the simulation after the Diamondoid Chassis
+// upgrade raises the heat cap.
 export const HEAT_HINT_BANDS: { max: number; msg: string }[] = [
-  { max: 30,                   msg: "All systems nominal." },
-  { max: HEAT_WARNING,         msg: "Heat manageable. Replication efficient." },
-  { max: HEAT_CRITICAL,        msg: "WARNING: efficiency degrading." },
-  { max: HEAT_RUNAWAY,         msg: "CRITICAL: chassis integrity at risk." },
-  { max: Infinity,             msg: "MELTDOWN: allocate more radiators!" },
+  { max: 0.30,                msg: "All systems nominal." },
+  { max: HEAT_WARNING_FRAC,   msg: "Heat manageable. Replication efficient." },
+  { max: HEAT_CRITICAL_FRAC,  msg: "WARNING: efficiency degrading." },
+  { max: HEAT_RUNAWAY_FRAC,   msg: "CRITICAL: chassis integrity at risk." },
+  { max: Infinity,            msg: "MELTDOWN: allocate more radiators!" },
 ];
 
 export const ECO_HINT_BANDS: { max: number; msg: string }[] = [

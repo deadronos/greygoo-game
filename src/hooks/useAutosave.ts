@@ -20,9 +20,18 @@ export function useAutosave() {
       const { state, nextThreatId } = useGameStore.getState();
       saveGame(state, nextThreatId);
       // Reflect the autosave in the topbar's flash label so the player
-      // sees that persistence is actually happening.
+      // sees that persistence is actually happening, then revert to the
+      // default after a short delay so the label doesn't go stale.
       const stamp = "autosaved " + new Date().toLocaleTimeString();
       useGameStore.setState({ saveFlash: stamp });
+      if (typeof window !== "undefined") {
+        const captured = stamp;
+        window.setTimeout(() => {
+          if (useGameStore.getState().saveFlash === captured) {
+            useGameStore.setState({ saveFlash: "localStorage" });
+          }
+        }, 4000);
+      }
     }, AUTOSAVE_MS);
     const onUnload = () => {
       const { state, nextThreatId } = useGameStore.getState();
