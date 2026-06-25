@@ -16,12 +16,12 @@ import {
   ENERGY_REGEN_PER_RADIATOR,
   HARVESTER_HEAT,
   HARVESTER_OUTPUT,
-  HEAT_CRITICAL,
+  HEAT_CRITICAL_FRAC,
   HEAT_DAMAGE_LOG_CHANCE,
   HEAT_DAMAGE_RATE,
   HEAT_PASSIVE_DECAY,
-  HEAT_RUNAWAY,
-  HEAT_WARNING,
+  HEAT_RUNAWAY_FRAC,
+  HEAT_WARNING_FRAC,
   METAL_HEAT_ABSORB,
   METAL_REFINE_ENERGY,
   RADIATOR_BASE,
@@ -32,6 +32,7 @@ import {
   SEEKER_DPS,
   TICK_MS,
 } from "./constants";
+import { heatCap } from "./state";
 import {
   canSpawnThreat,
   resolveThreats,
@@ -74,7 +75,7 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
 
   const H = state.allocation.harvester;
   const R = state.allocation.radiator;
-  const S = state.allocation.seeker;
+  // Seeker allocation is consumed inside resolveThreats().
 
   // ---- HEAT dynamics ---------------------------------------------------
   const harvHeat = HARVESTER_HEAT * state.harvHeatMul * H;
@@ -85,10 +86,14 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   state.heat = Math.max(0, state.heat + heatDelta);
 
   // ---- biomass production --------------------------------------------
+  const cap = heatCap(state);
+  const warnThreshold = cap * HEAT_WARNING_FRAC;
+  const critThreshold = cap * HEAT_CRITICAL_FRAC;
+  const runThreshold = cap * HEAT_RUNAWAY_FRAC;
   let efficiency = 1;
-  if (state.heat > HEAT_WARNING) efficiency *= 0.7;
-  if (state.heat > HEAT_CRITICAL) efficiency *= 0.5;
-  if (state.heat > HEAT_RUNAWAY) efficiency *= 0.25;
+  if (state.heat > warnThreshold) efficiency *= 0.7;
+  if (state.heat > critThreshold) efficiency *= 0.5;
+  if (state.heat > runThreshold) efficiency *= 0.25;
   const biomassProd = HARVESTER_OUTPUT * state.harvYieldMul * H * efficiency;
   state.biomass += biomassProd * dt;
   state.totalConsumed += biomassProd * dt;
@@ -127,8 +132,8 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   );
 
   // ---- THERMAL DAMAGE ------------------------------------------------
-  if (state.heat > HEAT_RUNAWAY) {
-    const dmg = (state.heat - HEAT_RUNAWAY) * HEAT_DAMAGE_RATE * dt;
+  if (state.heat > runThreshold) {
+    const dmg = (state.heat - runThreshold) * HEAT_DAMAGE_RATE * dt;
     const loss = Math.min(state.nanites, dmg);
     state.nanites = Math.max(0, state.nanites - loss);
     state.nanitesLostToHeat += loss;
@@ -140,7 +145,7 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
         level: "danger",
       });
     }
-  } else if (state.heat > HEAT_CRITICAL && Math.random() < 0.04) {
+  } else if (state.heat > critThreshold && Math.random() < 0.04) {
     results.push({
       ok: false,
       msg: `Chassis integrity degrading. Heat: ${state.heat.toFixed(1)}`,
@@ -166,9 +171,6 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
 
   // ---- passive energy regen -----------------------------------------
   state.energy += (R * ENERGY_REGEN_PER_RADIATOR + ENERGY_REGEN_BASE) * dt;
-
-  // Suppress "unused" warning for S — seekerDps is derived from it elsewhere.
-  void S;
 
   return { results, nextThreatId };
 }

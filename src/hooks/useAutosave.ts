@@ -19,6 +19,10 @@ export function useAutosave() {
     const handle = window.setInterval(() => {
       const { state, nextThreatId } = useGameStore.getState();
       saveGame(state, nextThreatId);
+      // Reflect the autosave in the topbar's flash label so the player
+      // sees that persistence is actually happening.
+      const stamp = "autosaved " + new Date().toLocaleTimeString();
+      useGameStore.setState({ saveFlash: stamp });
     }, AUTOSAVE_MS);
     const onUnload = () => {
       const { state, nextThreatId } = useGameStore.getState();

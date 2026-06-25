@@ -25,13 +25,16 @@ export function pickThreatType(state: GameState): ThreatType | null {
   const maxTier = Math.min(4, 1 + Math.floor(state.awareness / THREAT_MAX_TIER_DIVISOR));
   const pool = THREAT_TYPES.filter((t) => t.tier <= maxTier);
   if (pool.length === 0) return null;
-  const r = Math.random();
+  // Normalize against the total weight so Math.random() ∈ [0,1) can
+  // reach every entry, even when spawn weights sum to >1.
+  const total = pool.reduce((a, t) => a + t.spawn, 0);
+  const r = Math.random() * total;
   let acc = 0;
   for (const t of pool) {
     acc += t.spawn;
     if (r < acc) return t;
   }
-  return pool[0]!;
+  return pool[pool.length - 1]!;
 }
 
 /** Spawn one threat from the eligible pool. Returns the new threat or null. */
@@ -101,7 +104,10 @@ export function rollNextSpawnInterval(state: GameState): number {
     THREAT_BASE_INTERVAL - state.ecophagy * 0.2,
   );
   const suppression = state.threatSuppression;
-  return baseInterval * (1 - suppression) * (0.7 + Math.random() * 0.6);
+  // Enforce the minimum interval AFTER suppression + jitter so the
+  // PHAGE COAT upgrade can't push spawns below THREAT_MIN_INTERVAL.
+  const interval = baseInterval * (1 - suppression) * (0.7 + Math.random() * 0.6);
+  return Math.max(THREAT_MIN_INTERVAL, interval);
 }
 
 /** True if the threat scheduler is allowed to spawn right now. */

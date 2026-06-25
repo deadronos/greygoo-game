@@ -309,6 +309,17 @@ export const useGameStore = create<GameStore>((set, get) => {
         log = pushLog(log, "Game saved.", "info");
         return { log, saveFlash: stamp };
       });
+      // Restore the default label after a short delay so the topbar
+      // doesn't display a stale timestamp forever if no other save runs.
+      if (typeof window !== "undefined") {
+        const captured = stamp;
+        window.setTimeout(() => {
+          // Only reset if no newer save has overwritten the stamp.
+          if (useGameStore.getState().saveFlash === captured) {
+            useGameStore.setState({ saveFlash: "localStorage" });
+          }
+        }, 4000);
+      }
     },
   };
 });
