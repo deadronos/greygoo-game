@@ -21,14 +21,14 @@ import {
   refineMetals,
   replicateNanite,
 } from "@/systems/actions";
+import type { ActionOutcome } from "@/systems/actions";
 import { LOG_MAX_LINES } from "@/systems/constants";
 import { saveGame, loadGame, wipeSave } from "@/systems/save";
 import { checkEndCondition, derivedStats, simulate } from "@/systems/simulation";
 import type { DerivedStats } from "@/systems/simulation";
 import { createInitialState, heatCap } from "@/systems/state";
-import { nowHMS } from "@/systems/format";
+import { fmtTime, nowHMS } from "@/systems/format";
 import type {
-  ActionResult,
   GameState,
   LogEntry,
   LogLevel,
@@ -87,6 +87,18 @@ let logIdCounter = 1;
 let pulseIdCounter = 1;
 const PULSE_TIMEOUT_MS = 240;
 
+// Pending pulse-removal timeouts. Cleared on game lifecycle transitions
+// (reset / restart / beginNewGame / resumeGame) so orphaned callbacks
+// can't fire setState against a store whose pulses array has been
+// wiped.
+const pendingPulseTimers = new Set<number>();
+
+function clearPendingPulses(): void {
+  if (typeof window === "undefined") return;
+  for (const h of pendingPulseTimers) window.clearTimeout(h);
+  pendingPulseTimers.clear();
+}
+
 function pushLog(log: LogEntry[], msg: string, level: LogLevel): LogEntry[] {
   const entry: LogEntry = {
     id: logIdCounter++,
@@ -105,32 +117,40 @@ function pushPulse(
 ): { pulses: PulseEvent[]; id: number } {
   const id = pulseIdCounter++;
   if (typeof window !== "undefined") {
-    window.setTimeout(() => {
+    const handle = window.setTimeout(() => {
+      pendingPulseTimers.delete(handle);
       useGameStore.setState((s) => ({
         pulses: s.pulses.filter((p) => p.id !== id),
       }));
     }, PULSE_TIMEOUT_MS);
+    pendingPulseTimers.add(handle);
   }
   return { pulses: [...pulses, { id, key }], id };
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
   /**
-   * Apply the side effects of an `ActionResult`: log it, schedule a
-   * visual pulse, and bump the state reference.
+   * Apply the side effects of an `ActionOutcome`: log it, schedule a
+   * visual pulse, and (only if state actually mutated) bump the state
+   * reference so subscribers re-render.
    */
-  const applyResult = (r: ActionResult): void => {
+  const applyOutcome = (o: ActionOutcome): void => {
+    const r = o.result;
+    if (!o.mutated && !r.pulse) {
+      // Pure log message — no state change, no visual pulse.
+      if (r.msg) set((s) => ({ log: pushLog(s.log, r.msg!, r.level) }));
+      return;
+    }
     set((s) => {
       let log = s.log;
       if (r.msg) log = pushLog(log, r.msg, r.level);
       let pulses = s.pulses;
-      let state = s.state;
       if (r.pulse) {
         const out = pushPulse(pulses, r.pulse);
         pulses = out.pulses;
       }
-      // Always bump — most actions mutate state.
-      state = { ...state };
+      // Only shallow-copy state if the action actually mutated it.
+      const state = o.mutated ? { ...s.state } : s.state;
       return { log, pulses, state };
     });
   };
@@ -153,6 +173,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     beginNewGame: () => {
+      clearPendingPulses();
       set({
         state: createInitialState(),
         nextThreatId: 1,
@@ -171,6 +192,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     resumeGame: () => {
       const loaded = loadGame();
       if (!loaded) return;
+      clearPendingPulses();
       set({
         state: loaded.state,
         nextThreatId: loaded.nextThreatId,
@@ -186,6 +208,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     reset: () => {
+      clearPendingPulses();
       set({
         state: createInitialState(),
         nextThreatId: 1,
@@ -199,6 +222,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     },
 
     restart: () => {
+      clearPendingPulses();
       set({
         state: createInitialState(),
         nextThreatId: 1,
@@ -224,40 +248,33 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     clickBreakBond: () => {
       const { state } = get();
-      const r = breakBond(state);
-      applyResult(r);
+      applyOutcome(breakBond(state));
     },
 
     clickMine: () => {
       const { state } = get();
-      applyResult(mineSilicates(state));
+      applyOutcome(mineSilicates(state));
     },
 
     clickRefine: () => {
       const { state } = get();
-      applyResult(refineMetals(state));
+      applyOutcome(refineMetals(state));
     },
 
     clickReplicate: () => {
       const { state } = get();
-      applyResult(replicateNanite(state));
+      applyOutcome(replicateNanite(state));
     },
 
     clickUpgrade: (id: string) => {
       const { state } = get();
-      const { result } = buyUpgrade(state, id);
-      applyResult(result);
+      const { outcome } = buyUpgrade(state, id);
+      applyOutcome(outcome);
     },
 
     changeAlloc: (morph, delta) => {
       const { state } = get();
-      const r = changeAllocation(state, morph, delta);
-      if (r.msg) {
-        applyResult(r);
-      } else {
-        // No message but state mutated — still bump.
-        set({ state: { ...state } });
-      }
+      applyOutcome(changeAllocation(state, morph, delta));
     },
 
     tick: () => {
@@ -285,12 +302,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       if (outcome === "won") {
         const totalConsumed = Math.floor(state.totalConsumed);
         const winStats =
-          `Time ${formatElapsed(state.elapsed)}, ${state.threatsKilled} threats killed, ` +
+          `Time ${fmtTime(state.elapsed)}, ${state.threatsKilled} threats killed, ` +
           `biosphere consumed in ${totalConsumed.toLocaleString()} units.`;
         set({ screen: "win", winStats });
       } else if (outcome === "lost") {
         const loseStats =
-          `Survived ${formatElapsed(state.elapsed)}, ${state.ecophagy.toFixed(2)}% ecophagy, ` +
+          `Survived ${fmtTime(state.elapsed)}, ${state.ecophagy.toFixed(2)}% ecophagy, ` +
           `${state.threatsKilled} threats killed.`;
         const loseReason =
           state.heat > heatCap(state) * 0.99
@@ -335,15 +352,3 @@ export const selectPulses = (s: GameStore): PulseEvent[] => s.pulses;
 export const selectSaveFlash = (s: GameStore): string => s.saveFlash;
 
 export const selectDerived = (s: GameStore): DerivedStats => derivedStats(s.state);
-
-// --- helpers --------------------------------------------------------------
-
-function formatElapsed(seconds: number): string {
-  const s = Math.floor(seconds);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  if (h) return `${h}h ${m}m ${ss}s`;
-  if (m) return `${m}m ${ss}s`;
-  return `${ss}s`;
-}

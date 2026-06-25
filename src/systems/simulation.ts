@@ -58,9 +58,9 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
     state.allocation.seeker;
   if (total > state.nanites) {
     const ratio = state.nanites / total;
-    state.allocation.harvester *= ratio;
-    state.allocation.radiator *= ratio;
-    state.allocation.seeker *= ratio;
+    state.allocation.harvester = Math.floor(state.allocation.harvester * ratio);
+    state.allocation.radiator = Math.floor(state.allocation.radiator * ratio);
+    state.allocation.seeker = Math.floor(state.allocation.seeker * ratio);
   }
 
   // ---- auto-allocate idle nanites (Automaton Replicator upgrade) -----
@@ -157,8 +157,8 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   state.nextThreatIn -= dt;
   if (canSpawnThreat(state)) {
     const t = spawnThreat(state, nextThreatId);
-    nextThreatId += 1;
     if (t) {
+      nextThreatId += 1;
       results.push({
         ok: false,
         msg: `⚠ THREAT DETECTED: ${t.type.name} (Tier ${t.type.tier})`,

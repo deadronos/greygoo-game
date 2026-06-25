@@ -23,7 +23,8 @@ export function Gauges() {
 
   const cap = heatCap(state);
   const heatPct = (state.heat / cap) * 100;
-  const heatHint = pickBand(HEAT_HINT_BANDS, state.heat).msg;
+  // HEAT_HINT_BANDS uses fractional thresholds so it tracks the cap.
+  const heatHint = pickBand(HEAT_HINT_BANDS, state.heat / cap).msg;
   const ecoHint = pickBand(ECO_HINT_BANDS, state.ecophagy).msg;
 
   // "Critical" means we've crossed the actual heat cap (which the

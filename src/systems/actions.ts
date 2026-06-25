@@ -2,7 +2,9 @@
  * Player-action handlers.
  *
  * Each function takes the state and a mutation surface, mutates state,
- * and returns an `ActionResult` describing what happened (for the log).
+ * and returns an `ActionResult` describing what happened (for the log)
+ * plus a `mutated` flag so the caller can decide whether to bump the
+ * top-level state reference (avoids wasted re-renders on no-op clicks).
  * These are *pure logic* — no React, no logging UI, no audio. The store
  * handles the side effects.
  */
@@ -32,13 +34,23 @@ import type {
   ResourceKey,
 } from "./types";
 
+/** Wrapper returned by every action handler. */
+export interface ActionOutcome {
+  result: ActionResult;
+  /** True if the action mutated the underlying state. */
+  mutated: boolean;
+}
+
 /** "Break Bond" — primary click action. */
-export function breakBond(state: GameState): ActionResult {
+export function breakBond(state: GameState): ActionOutcome {
   if (state.heat >= heatCap(state) * HEAT_LOCKOUT_MULTIPLIER) {
     return {
-      ok: false,
-      msg: "Thermal lockout. Chassis too hot to act.",
-      level: "warn",
+      result: {
+        ok: false,
+        msg: "Thermal lockout. Chassis too hot to act.",
+        level: "warn",
+      },
+      mutated: false,
     };
   }
   const energyGain = CLICK_ENERGY * state.clickEnergyMul;
@@ -51,57 +63,81 @@ export function breakBond(state: GameState): ActionResult {
   state.bonds += 1;
 
   return {
-    ok: true,
-    msg: `Bond cleaved. +${energyGain.toFixed(1)}e +${heatGain.toFixed(2)}H +${biomassGain.toFixed(2)}bio`,
-    level: "info",
-    pulse: "biomass",
+    result: {
+      ok: true,
+      msg: `Bond cleaved. +${energyGain.toFixed(1)}e +${heatGain.toFixed(2)}H +${biomassGain.toFixed(2)}bio`,
+      level: "info",
+      pulse: "biomass",
+    },
+    mutated: true,
   };
 }
 
 /** Endothermic mining — costs energy, yields silicates, absorbs heat. */
-export function mineSilicates(state: GameState): ActionResult {
+export function mineSilicates(state: GameState): ActionOutcome {
   if (state.energy < SILICATE_MINE_ENERGY) {
-    return { ok: false, msg: "Insufficient energy to mine silicates.", level: "warn" };
+    return {
+      result: { ok: false, msg: "Insufficient energy to mine silicates.", level: "warn" },
+      mutated: false,
+    };
   }
   state.energy -= SILICATE_MINE_ENERGY;
   state.silicates += 1;
   state.heat = Math.max(0, state.heat - SILICATE_HEAT_ABSORB);
   return {
-    ok: true,
-    msg: "Endothermic mining — heat absorbed.",
-    level: "info",
-    pulse: "silicates",
+    result: {
+      ok: true,
+      msg: "Endothermic mining — heat absorbed.",
+      level: "info",
+      pulse: "silicates",
+    },
+    mutated: true,
   };
 }
 
 /** Refine metal — needs the Foundry upgrade. */
-export function refineMetals(state: GameState): ActionResult {
+export function refineMetals(state: GameState): ActionOutcome {
   if (!state.canRefine) {
-    return { ok: false, msg: "Refining protocol not yet acquired.", level: "warn" };
+    return {
+      result: { ok: false, msg: "Refining protocol not yet acquired.", level: "warn" },
+      mutated: false,
+    };
   }
   if (state.silicates < METAL_REFINE_SILICATE || state.energy < METAL_REFINE_ENERGY) {
-    return { ok: false, msg: "Need silicates + energy to refine metals.", level: "warn" };
+    return {
+      result: { ok: false, msg: "Need silicates + energy to refine metals.", level: "warn" },
+      mutated: false,
+    };
   }
   state.silicates -= METAL_REFINE_SILICATE;
   state.energy -= METAL_REFINE_ENERGY;
   state.metals += 1;
   state.heat = Math.max(0, state.heat - METAL_HEAT_ABSORB);
   return {
-    ok: true,
-    msg: "Metal refined. Structural lattice cooled.",
-    level: "info",
-    pulse: "metals",
+    result: {
+      ok: true,
+      msg: "Metal refined. Structural lattice cooled.",
+      level: "info",
+      pulse: "metals",
+    },
+    mutated: true,
   };
 }
 
 /** Replicate a new nanite. Cost scales with swarm size. */
-export function replicateNanite(state: GameState): ActionResult {
+export function replicateNanite(state: GameState): ActionOutcome {
   const cost = Math.floor(REPLICATE_BASE_COST + state.nanites * REPLICATE_GROWTH);
   if (state.energy < cost) {
-    return { ok: false, msg: `Need ${cost} energy to replicate.`, level: "warn" };
+    return {
+      result: { ok: false, msg: `Need ${cost} energy to replicate.`, level: "warn" },
+      mutated: false,
+    };
   }
   if (state.biomass < REPLICATE_BIOMASS_COST) {
-    return { ok: false, msg: `Need ${REPLICATE_BIOMASS_COST} biomass to replicate.`, level: "warn" };
+    return {
+      result: { ok: false, msg: `Need ${REPLICATE_BIOMASS_COST} biomass to replicate.`, level: "warn" },
+      mutated: false,
+    };
   }
   state.energy -= cost;
   state.biomass -= REPLICATE_BIOMASS_COST;
@@ -109,10 +145,13 @@ export function replicateNanite(state: GameState): ActionResult {
   state.heat += REPLICATE_HEAT_COST;
   state.allocation.harvester += 1;
   return {
-    ok: true,
-    msg: `+1 nanite replicated. Cost: ${cost}e + ${REPLICATE_BIOMASS_COST}bio.`,
-    level: "good",
-    pulse: "nanites",
+    result: {
+      ok: true,
+      msg: `+1 nanite replicated. Cost: ${cost}e + ${REPLICATE_BIOMASS_COST}bio.`,
+      level: "good",
+      pulse: "nanites",
+    },
+    mutated: true,
   };
 }
 
@@ -121,7 +160,7 @@ export function changeAllocation(
   state: GameState,
   morph: MorphKey,
   delta: number,
-): ActionResult {
+): ActionOutcome {
   const current = state.allocation[morph];
   const total =
     state.allocation.harvester +
@@ -129,30 +168,50 @@ export function changeAllocation(
     state.allocation.seeker;
 
   if (delta > 0 && total >= state.nanites) {
-    return { ok: false, msg: "All nanites already allocated.", level: "warn" };
+    return {
+      result: { ok: false, msg: "All nanites already allocated.", level: "warn" },
+      mutated: false,
+    };
   }
   if (delta < 0 && current <= 0) {
-    return { ok: true, level: "" };
+    return { result: { ok: true, level: "" }, mutated: false };
   }
   state.allocation[morph] = current + delta;
-  return { ok: true, level: "" };
+  return { result: { ok: true, level: "" }, mutated: true };
 }
 
 /** Buy an upgrade. Returns an `ActionResult` so the store can log. */
 export function buyUpgrade(
   state: GameState,
   upgradeId: string,
-): { result: ActionResult; upgrade?: UpgradeDef } {
+): { outcome: ActionOutcome; upgrade?: UpgradeDef } {
   const upgrade = findUpgrade(upgradeId);
   if (!upgrade) {
-    return { result: { ok: false, msg: "Unknown upgrade.", level: "warn" } };
+    return {
+      outcome: {
+        result: { ok: false, msg: "Unknown upgrade.", level: "warn" },
+        mutated: false,
+      },
+    };
   }
   if (state.upgrades[upgrade.id]) {
-    return { result: { ok: false, msg: "Already installed.", level: "warn" }, upgrade };
+    return {
+      outcome: {
+        result: { ok: false, msg: "Already installed.", level: "warn" },
+        mutated: false,
+      },
+      upgrade,
+    };
   }
   for (const [key, value] of Object.entries(upgrade.cost) as [ResourceKey, number][]) {
     if ((state[key] as number) < value) {
-      return { result: { ok: false, msg: "Cannot afford upgrade.", level: "warn" }, upgrade };
+      return {
+        outcome: {
+          result: { ok: false, msg: "Cannot afford upgrade.", level: "warn" },
+          mutated: false,
+        },
+        upgrade,
+      };
     }
   }
   for (const [key, value] of Object.entries(upgrade.cost) as [ResourceKey, number][]) {
@@ -161,7 +220,10 @@ export function buyUpgrade(
   state.upgrades[upgrade.id] = true;
   upgrade.apply(state);
   return {
-    result: { ok: true, msg: `UPGRADE INSTALLED: ${upgrade.name}`, level: "good" },
+    outcome: {
+      result: { ok: true, msg: `UPGRADE INSTALLED: ${upgrade.name}`, level: "good" },
+      mutated: true,
+    },
     upgrade,
   };
 }
