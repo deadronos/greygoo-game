@@ -39,6 +39,17 @@ export const RADIATOR_COOL = 0.55;     // heat    / s / radiator (drained)
 export const RADIATOR_BASE = 0.05;     // baseline passive cooling per nanite
 export const SEEKER_DPS = 1.0;         // dmg / s / seeker (vs tier-1 threats)
 
+// --- Threat-vs-swarm damage formula --------------------------------------
+// When threats outpace seekers, they eat nanites. The formula gives a
+// gradual (rather than knife-edge) response so partially-staffed seekers
+// provide proportional protection:
+//   raw     = max(0, THREAT_DMG_FRAC * t.dmg - seekerDmg)
+//   nanites = raw * THREAT_SEEKER_PROTECTION_FRAC per tick
+// At zero seekers, nanite loss is (THREAT_DMG_FRAC * THREAT_SEEKER_PROTECTION_FRAC)
+// of threat DPS; at seekerDmg >= THREAT_DMG_FRAC * t.dmg the loss is zero.
+export const THREAT_DMG_FRAC = 0.5;
+export const THREAT_SEEKER_PROTECTION_FRAC = 0.5;
+
 // --- Mining / refining ----------------------------------------------------
 export const SILICATE_MINE_ENERGY = 1;
 export const SILICATE_HEAT_ABSORB = 2.0;
@@ -82,6 +93,11 @@ export const ENERGY_REGEN_PER_RADIATOR = 0.03;
 export const AWARENESS_FIRST_SPAWN = 8;
 export const THREAT_BASE_INTERVAL = 30;
 export const THREAT_MIN_INTERVAL = 6;
+// Maximum number of active threats at once. Beyond this, spawn() is a
+// no-op so the simulation stays responsive (per-tick resolveThreats
+// iteration, per-render ThreatList, autosave JSON serialization all
+// scale linearly with this count).
+export const THREAT_HARD_CAP = 50;
 // `canSpawnThreat` and `pickThreatType` must agree, otherwise the
 // scheduler runs in a tight loop every tick in the gap band. We keep
 // a single source of truth and have the floor mirror the first-spawn

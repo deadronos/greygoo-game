@@ -41,7 +41,6 @@ export function AllocationPanel() {
         {MORPHS.map((m) => (
           <AllocationRow
             key={m.key}
-            morph={m.key}
             name={m.name}
             desc={m.desc}
             count={state.allocation[m.key]}

@@ -3,10 +3,8 @@
  */
 
 import styles from "./Allocation.module.css";
-import type { MorphKey } from "@/systems/types";
 
 interface AllocationRowProps {
-  morph: MorphKey;
   name: string;
   desc: string;
   count: number;

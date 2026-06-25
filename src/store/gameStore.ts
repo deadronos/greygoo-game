@@ -101,6 +101,12 @@ function clearPendingPulses(): void {
   pendingPulseTimers.clear();
 }
 
+/** Reset module-scoped counters when starting a fresh game session. */
+function resetIdCounters(): void {
+  logIdCounter = 1;
+  pulseIdCounter = 1;
+}
+
 function pushLog(log: LogEntry[], msg: string, level: LogLevel): LogEntry[] {
   const entry: LogEntry = {
     id: logIdCounter++,
@@ -176,6 +182,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     beginNewGame: () => {
       clearPendingPulses();
+      resetIdCounters();
       set({
         state: createInitialState(),
         nextThreatId: 1,
@@ -195,6 +202,7 @@ export const useGameStore = create<GameStore>((set, get) => {
       const loaded = loadGame();
       if (!loaded) return;
       clearPendingPulses();
+      resetIdCounters();
       set({
         state: loaded.state,
         nextThreatId: loaded.nextThreatId,
@@ -211,6 +219,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     reset: () => {
       clearPendingPulses();
+      resetIdCounters();
       set({
         state: createInitialState(),
         nextThreatId: 1,
@@ -225,6 +234,7 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     restart: () => {
       clearPendingPulses();
+      resetIdCounters();
       set({
         state: createInitialState(),
         nextThreatId: 1,
