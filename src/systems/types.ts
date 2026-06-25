@@ -82,6 +82,10 @@ export interface GameState {
   threatsKilled: number;
   thermalEvents: number;
   elapsed: number;
+  // Cumulative biomass ever harvested (clicks + harvester output).
+  // Used for the win-stat summary so it isn't confused with the
+  // leftover biomass resource the player is still holding.
+  biomassHarvested: number;
 
   // threats
   threats: Threat[];

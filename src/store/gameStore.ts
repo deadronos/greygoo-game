@@ -26,7 +26,7 @@ import type { ActionOutcome } from "@/systems/actions";
 import { LOG_MAX_LINES } from "@/systems/constants";
 import { HEAT_LOSE_REASON_FRAC, INITIAL_BIOMASS } from "@/systems/constants";
 import { saveGame, loadGame, wipeSave } from "@/systems/save";
-import { checkEndCondition, derivedStats, simulate } from "@/systems/simulation";
+import { checkEndCondition, DEFAULT_TICK_DT, derivedStats, simulate } from "@/systems/simulation";
 import type { DerivedStats } from "@/systems/simulation";
 import { createInitialState, heatCap } from "@/systems/state";
 import { fmtTime, nowHMS } from "@/systems/format";
@@ -79,7 +79,7 @@ interface GameStore {
   changeAlloc: (morph: MorphKey, delta: number) => void;
 
   // ---- simulation -----------------------------------------------------
-  tick: () => void;
+  tick: (dt?: number) => void;
 
   // ---- helpers --------------------------------------------------------
   forceSave: () => void;
@@ -289,11 +289,11 @@ export const useGameStore = create<GameStore>((set, get) => {
       applyOutcome(changeAllocation(state, morph, delta));
     },
 
-    tick: () => {
+    tick: (dt = DEFAULT_TICK_DT) => {
       const { state, nextThreatId, screen } = get();
       if (screen !== "play") return;
 
-      const { results, nextThreatId: nextId } = simulate(state, nextThreatId);
+      const { results, nextThreatId: nextId } = simulate(state, nextThreatId, dt);
 
       // Compose all updates in a single `set` call. Pulse events
       // emitted by the simulation (e.g. threat-kill resource drops)
@@ -321,12 +321,16 @@ export const useGameStore = create<GameStore>((set, get) => {
       // is the only thing that changes.
       const outcome = checkEndCondition(state);
       if (outcome === "won") {
-        const totalConsumed = Math.max(0, Math.floor(state.biomass - INITIAL_BIOMASS));
+        // Wipe the saved run so a finished game can't be "resumed"
+        // straight back into the win screen on next load.
+        wipeSave();
+        const totalConsumed = Math.max(0, Math.floor(state.biomassHarvested - INITIAL_BIOMASS));
         const winStats =
           `Time ${fmtTime(state.elapsed)}, ${state.threatsKilled} threats killed, ` +
           `biosphere consumed in ${totalConsumed.toLocaleString()} units.`;
-        set({ screen: "win", winStats });
+        set({ screen: "win", winStats, hasSave: false });
       } else if (outcome === "lost") {
+        wipeSave();
         const loseStats =
           `Survived ${fmtTime(state.elapsed)}, ${state.ecophagy.toFixed(2)}% ecophagy, ` +
           `${state.threatsKilled} threats killed.`;
@@ -334,7 +338,7 @@ export const useGameStore = create<GameStore>((set, get) => {
           state.heat > heatCap(state) * HEAT_LOSE_REASON_FRAC
             ? "Your diamondoid chassis annealed. You are slag."
             : "Your swarm was destroyed by human countermeasures.";
-        set({ screen: "lose", loseStats, loseReason });
+        set({ screen: "lose", loseStats, loseReason, hasSave: false });
       }
     },
 

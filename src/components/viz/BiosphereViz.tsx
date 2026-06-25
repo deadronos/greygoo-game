@@ -9,7 +9,7 @@
 import { useEffect, useRef } from "react";
 
 import { selectDerived, selectState, shallow, useGameStore } from "@/store/gameStore";
-import { HEAT_WARNING, HEAT_CRITICAL } from "@/systems/constants";
+import { HEAT_WARNING_FRAC, HEAT_CRITICAL_FRAC } from "@/systems/constants";
 import { heatCap } from "@/systems/state";
 
 interface Particle {
@@ -199,9 +199,13 @@ export function BiosphereViz() {
   const state = useGameStore(selectState);
   const derived = useGameStore(selectDerived, shallow);
 
+  // Cap-scaled thresholds so the temperature label stays consistent
+  // with the simulation after the Diamondoid Chassis upgrade raises
+  // the heat cap above the base 100.
+  const cap = heatCap(state);
   const temperatureColor =
-    state.heat < HEAT_WARNING ? "var(--accent)" :
-    state.heat < HEAT_CRITICAL ? "var(--warn)" :
+    state.heat < cap * HEAT_WARNING_FRAC ? "var(--accent)" :
+    state.heat < cap * HEAT_CRITICAL_FRAC ? "var(--warn)" :
     "var(--danger)";
 
   return (

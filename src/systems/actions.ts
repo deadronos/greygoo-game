@@ -60,6 +60,9 @@ export function breakBond(state: GameState): ActionOutcome {
   state.energy += energyGain;
   state.heat += heatGain;
   state.biomass += biomassGain;
+  // Mirror the harvester accounting so click-based biomass also counts
+  // toward the cumulative harvested total used in the win summary.
+  state.biomassHarvested += biomassGain;
   state.bonds += 1;
 
   return {

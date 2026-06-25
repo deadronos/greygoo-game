@@ -26,6 +26,15 @@ export function PrimaryAction() {
 
   const lockout = state.heat >= heatCap(state) * HEAT_LOCKOUT_MULTIPLIER;
 
+  function onClick() {
+    clickBreakBond();
+    // Blur so Space/Enter doesn't re-fire the native button click
+    // on top of the global keyboard-shortcut handler.
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLButtonElement) {
+      document.activeElement.blur();
+    }
+  }
+
   // Spawn click-burst particles when the button is clicked.
   useEffect(() => {
     const el = buttonRef.current;
@@ -66,7 +75,7 @@ export function PrimaryAction() {
         main="BREAK BOND"
         sub={`+${derived.bondEnergy.toFixed(1)} energy · +${derived.bondHeat.toFixed(2)} heat`}
         cooling={lockout}
-        onClick={clickBreakBond}
+        onClick={onClick}
         onContextMenu={onContextMenu}
       />
       <div className={styles.stats}>

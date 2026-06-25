@@ -1,9 +1,9 @@
 /**
  * The per-tick simulation.
  *
- * `simulate(state, nextThreatId)` advances the world by one tick.
- * Pure mutation on `state`; returns log entries for the UI and the
- * updated `nextThreatId` counter.
+ * Advance the world by `dt` seconds. Pure mutation on `state`;
+ * returns log entries for the UI and the updated `nextThreatId`
+ * counter.
  */
 
 import {
@@ -41,13 +41,24 @@ import {
 } from "./combat";
 import type { ActionResult, GameState, ResourceKey } from "./types";
 
+/**
+ * Default per-tick timestep in seconds, used when the caller doesn't
+ * supply a measured delta (e.g. unit tests). The game loop passes the
+ * real elapsed wall-clock time so background-tab throttling can't
+ * silently stall the simulation.
+ */
+export const DEFAULT_TICK_DT = TICK_MS / 1000;
+
 export interface SimResult {
   results: ActionResult[];
   nextThreatId: number;
 }
 
-export function simulate(state: GameState, nextThreatId: number): SimResult {
-  const dt = TICK_MS / 1000;
+export function simulate(
+  state: GameState,
+  nextThreatId: number,
+  dt: number = DEFAULT_TICK_DT,
+): SimResult {
   state.elapsed += dt;
   const results: ActionResult[] = [];
 
@@ -96,6 +107,9 @@ export function simulate(state: GameState, nextThreatId: number): SimResult {
   if (state.heat > runThreshold) efficiency *= 0.25;
   const biomassProd = HARVESTER_OUTPUT * state.harvYieldMul * H * efficiency;
   state.biomass += biomassProd * dt;
+  // Track total biomass ever harvested so the win summary reports
+  // cumulative consumption instead of the leftover resource.
+  state.biomassHarvested += biomassProd * dt;
 
   // ---- passive resource trickle --------------------------------------
   state.silicates += state.silAutoAdd * dt;
