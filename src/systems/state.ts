@@ -10,7 +10,8 @@ import {
   HEAT_CAP_BASE,
   STARTING_NANITES,
 } from "./constants";
-import type { Allocation, GameState, SaveData, Threat } from "./types";
+import { UPGRADES } from "./upgrades";
+import type { GameState, MorphKey, SaveData, Threat } from "./types";
 
 /** Type guard for an individual threat entry in a deserialized save. */
 function isValidThreat(t: unknown): t is Threat {
@@ -39,6 +40,31 @@ function isValidThreat(t: unknown): t is Threat {
  */
 function asFiniteNumber(x: unknown, fallback: number): number {
   return typeof x === "number" && Number.isFinite(x) ? x : fallback;
+}
+
+const NON_NEG = (n: number) => (n < 0 ? 0 : n);
+const KNOWN_UPGRADE_IDS = new Set<string>(UPGRADES.map((u) => u.id));
+
+/** Returns true if `x` is a plain object whose values are all `true`. */
+function isBoolMap(x: unknown): x is Record<string, true> {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
+  for (const v of Object.values(x as Record<string, unknown>)) {
+    if (v !== true) return false;
+  }
+  return true;
+}
+
+/**
+ * Type-safe lookup for an allocation sub-field. Returns NaN for any
+ * non-numeric value so the caller can fall back via `asFiniteNumber`.
+ */
+function readAllocField(
+  raw: unknown,
+  key: MorphKey,
+): number | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const v = (raw as Partial<Record<MorphKey, unknown>>)[key];
+  return typeof v === "number" ? v : undefined;
 }
 
 export function createInitialState(): GameState {
@@ -96,20 +122,40 @@ export function heatCap(state: GameState): number {
 export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextThreatId: number } {
   const base = createInitialState();
   const merged: Record<string, unknown> = { ...base, ...(partial.state ?? {}) };
-  // Defensive: re-clamp allocation in case the save was tampered with.
+
+  // Defensively re-validate the allocation sub-object. A naive
+  // `Math.max(0, "abc")` returns NaN, which then propagates through
+  // the simulation; route every key through asFiniteNumber so a
+  // tampered save with `"harvester": "abc"` falls back to the initial
+  // value instead of producing NaN.
   merged.allocation = {
-    harvester: Math.max(0, (merged.allocation as Allocation | undefined)?.harvester ?? 0),
-    radiator: Math.max(0, (merged.allocation as Allocation | undefined)?.radiator ?? 0),
-    seeker: Math.max(0, (merged.allocation as Allocation | undefined)?.seeker ?? 0),
+    harvester: asFiniteNumber(readAllocField(merged.allocation, "harvester"), base.allocation.harvester),
+    radiator:  asFiniteNumber(readAllocField(merged.allocation, "radiator"),  base.allocation.radiator),
+    seeker:    asFiniteNumber(readAllocField(merged.allocation, "seeker"),    base.allocation.seeker),
   };
+
   // Drop malformed threats so a tampered save can't crash the sim.
   merged.threats = Array.isArray(merged.threats)
     ? (merged.threats as unknown[]).filter(isValidThreat)
     : [];
-  merged.upgrades = (merged.upgrades as object | null | undefined) ?? {};
+
+  // Upgrades must be a plain object of `{ [id]: true }` entries; a
+  // string or other primitive would silently break the "already
+  // installed?" check in buyUpgrade and let the player re-purchase.
+  // Also restrict to known IDs so old saves with removed upgrades
+  // can't keep stale entries around.
+  if (!isBoolMap(merged.upgrades)) {
+    merged.upgrades = {};
+  } else {
+    for (const k of Object.keys(merged.upgrades)) {
+      if (!KNOWN_UPGRADE_IDS.has(k)) delete (merged.upgrades as Record<string, unknown>)[k];
+    }
+  }
 
   // Validate every numeric field so a tampered save can't NaN-propagate
-  // through the simulation and silently break the UI.
+  // through the simulation and silently break the UI. Several fields
+  // are semantically non-negative; clamp them so the UI never shows
+  // values like "T+-1m 40s" or "-12 threats killed".
   const state: GameState = {
     ...base,
     ...merged,
@@ -121,22 +167,23 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
     nanites:    asFiniteNumber(merged.nanites,    base.nanites),
     ecophagy:   asFiniteNumber(merged.ecophagy,   base.ecophagy),
     awareness:  asFiniteNumber(merged.awareness,  base.awareness),
-    bonds:      asFiniteNumber(merged.bonds,      base.bonds),
-    threatsKilled:  asFiniteNumber(merged.threatsKilled,  base.threatsKilled),
-    thermalEvents:  asFiniteNumber(merged.thermalEvents,  base.thermalEvents),
-    elapsed:        asFiniteNumber(merged.elapsed,        base.elapsed),
+    bonds:          NON_NEG(asFiniteNumber(merged.bonds,          base.bonds)),
+    threatsKilled:  NON_NEG(asFiniteNumber(merged.threatsKilled,  base.threatsKilled)),
+    thermalEvents:  NON_NEG(asFiniteNumber(merged.thermalEvents,  base.thermalEvents)),
+    elapsed:        NON_NEG(asFiniteNumber(merged.elapsed,        base.elapsed)),
     nextThreatIn:   asFiniteNumber(merged.nextThreatIn,   base.nextThreatIn),
     harvYieldMul:   asFiniteNumber(merged.harvYieldMul,   1),
     harvHeatMul:    asFiniteNumber(merged.harvHeatMul,    1),
     radCoolMul:     asFiniteNumber(merged.radCoolMul,     1),
     seekDmgMul:     asFiniteNumber(merged.seekDmgMul,     1),
-    silAutoAdd:     asFiniteNumber(merged.silAutoAdd,     0),
-    metAutoAdd:     asFiniteNumber(merged.metAutoAdd,     0),
+    silAutoAdd:     NON_NEG(asFiniteNumber(merged.silAutoAdd,     0)),
+    metAutoAdd:     NON_NEG(asFiniteNumber(merged.metAutoAdd,     0)),
     clickHeatMul:   asFiniteNumber(merged.clickHeatMul,   1),
     clickEnergyMul: asFiniteNumber(merged.clickEnergyMul, 1),
-    heatCapBonus:   asFiniteNumber(merged.heatCapBonus,   0),
-    autoAlloc:      asFiniteNumber(merged.autoAlloc,      0),
-    threatSuppression: asFiniteNumber(merged.threatSuppression, 0),
+    heatCapBonus:   NON_NEG(asFiniteNumber(merged.heatCapBonus,   0)),
+    autoAlloc:      NON_NEG(asFiniteNumber(merged.autoAlloc,      0)),
+    // threatSuppression is a probability-fraction; clamp to [0, 1].
+    threatSuppression: Math.min(1, NON_NEG(asFiniteNumber(merged.threatSuppression, 0))),
   };
 
   const id =

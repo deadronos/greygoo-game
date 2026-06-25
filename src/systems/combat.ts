@@ -10,8 +10,11 @@ import {
   SEEKER_DPS,
   THREAT_AWARENESS_FLOOR,
   THREAT_BASE_INTERVAL,
+  THREAT_DMG_FRAC,
+  THREAT_HARD_CAP,
   THREAT_MAX_TIER_DIVISOR,
   THREAT_MIN_INTERVAL,
+  THREAT_SEEKER_PROTECTION_FRAC,
 } from "./constants";
 import { THREAT_TYPES } from "./threats";
 import type { ActionResult, GameState, Threat, ThreatType } from "./types";
@@ -41,6 +44,10 @@ export function pickThreatType(state: GameState): ThreatType | null {
 export function spawnThreat(state: GameState, id: number): Threat | null {
   const type = pickThreatType(state);
   if (!type) return null;
+  // Skip spawn if the player is already overwhelmed — keeps the
+  // per-tick resolveThreats loop, the React threat list, and the
+  // autosave JSON.stringify bounded regardless of play style.
+  if (state.threats.length >= THREAT_HARD_CAP) return null;
   const scale = 1 + (state.ecophagy / 100) * 2;
   const threat: Threat = {
     id,
@@ -88,11 +95,13 @@ export function resolveThreats(state: GameState, dt: number): ActionResult[] {
       }
       continue;
     }
-    // If seekers are outpaced, threats eat nanites
-    if (seekerDmg < t.dmg * 0.5) {
-      const dmg = (t.dmg * 0.5 - seekerDmg * 0.05) * dt;
-      state.nanites = Math.max(0, state.nanites - dmg);
-    }
+    // If seekers are outpaced, threats eat nanites. The damage scales
+    // linearly from (THREAT_DMG_FRAC * THREAT_SEEKER_PROTECTION_FRAC)
+    // of threat DPS at zero seekers down to zero once seekers can match
+    // THREAT_DMG_FRAC of the threat's DPS — no knife edge.
+    const unmatchedDmg = Math.max(0, t.dmg * THREAT_DMG_FRAC - seekerDmg);
+    const dmg = unmatchedDmg * THREAT_SEEKER_PROTECTION_FRAC * dt;
+    state.nanites = Math.max(0, state.nanites - dmg);
   }
   return results;
 }
