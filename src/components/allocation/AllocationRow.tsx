@@ -8,10 +8,14 @@ interface AllocationRowProps {
   name: string;
   desc: string;
   count: number;
+  /** True when at least one idle nanite is available to assign. */
+  canAdd: boolean;
+  /** True when this morph has at least one nanite to pull back. */
+  canRemove: boolean;
   onChange: (delta: number) => void;
 }
 
-export function AllocationRow({ name, desc, count, onChange }: AllocationRowProps) {
+export function AllocationRow({ name, desc, count, canAdd, canRemove, onChange }: AllocationRowProps) {
   return (
     <div className={styles.row}>
       <div className={styles.info}>
@@ -21,9 +25,9 @@ export function AllocationRow({ name, desc, count, onChange }: AllocationRowProp
         <div className={styles.desc}>{desc}</div>
       </div>
       <div className={styles.controls}>
-        <button onClick={() => onChange(-1)}>−</button>
+        <button onClick={() => onChange(-1)} disabled={!canRemove}>−</button>
         <span className={styles.count}>{count}</span>
-        <button onClick={() => onChange(1)}>+</button>
+        <button onClick={() => onChange(1)} disabled={!canAdd}>+</button>
       </div>
     </div>
   );

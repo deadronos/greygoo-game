@@ -22,7 +22,7 @@ export function VizPanel() {
         <Stat label="Active Threats" value={state.threats.length} />
         <Stat label="Seeker DPS" value={derived.seekerDps.toFixed(1)} />
         <Stat label="Cooling" value={`${derived.coolingRate.toFixed(2)}/s`} />
-        <Stat label="Replication" value={`${derived.harvesterBiomassRate.toFixed(2)}/s`} />
+        <Stat label="Biomass/s" value={`${derived.harvesterBiomassRate.toFixed(2)}/s`} />
       </div>
     </Panel>
   );
