@@ -177,10 +177,12 @@ export function changeAllocation(
     state.allocation.seeker;
 
   if (delta > 0 && total >= state.nanites) {
-    return {
-      result: { ok: false, msg: "All nanites already allocated.", level: "warn" },
-      mutated: false,
-    };
+    // Fully allocated — no-op silently. Logging a warn here would
+    // flood the 80-line event log when the player mashes the +
+    // button (or a future x10 caller) at the swarm cap. The
+    // keyboard path already guards before calling, so this keeps
+    // the two input surfaces symmetric.
+    return { result: { ok: true, level: "" }, mutated: false };
   }
   if (delta < 0 && current <= 0) {
     return { result: { ok: true, level: "" }, mutated: false };

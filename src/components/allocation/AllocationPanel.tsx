@@ -44,6 +44,8 @@ export function AllocationPanel() {
             name={m.name}
             desc={m.desc}
             count={state.allocation[m.key]}
+            canAdd={total < state.nanites}
+            canRemove={state.allocation[m.key] > 0}
             onChange={(delta) => changeAlloc(m.key, delta)}
           />
         ))}

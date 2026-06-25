@@ -113,15 +113,14 @@ export function simulate(
   state.heat = Math.max(0, state.heat + heatDelta);
 
   // ---- biomass production --------------------------------------------
+  const efficiency = heatEfficiency(state);
+  const biomassProd = HARVESTER_OUTPUT * state.harvYieldMul * H * efficiency;
+  // Re-derive the cap-scaled thresholds here (heatEfficiency owns
+  // its own copies internally) for the thermal-damage band checks
+  // below.
   const cap = heatCap(state);
-  const warnThreshold = cap * HEAT_WARNING_FRAC;
   const critThreshold = cap * HEAT_CRITICAL_FRAC;
   const runThreshold = cap * HEAT_RUNAWAY_FRAC;
-  let efficiency = 1;
-  if (state.heat > warnThreshold) efficiency *= 0.7;
-  if (state.heat > critThreshold) efficiency *= 0.5;
-  if (state.heat > runThreshold) efficiency *= 0.25;
-  const biomassProd = HARVESTER_OUTPUT * state.harvYieldMul * H * efficiency;
   state.biomass += biomassProd * dt;
   // Track total biomass ever harvested so the win summary reports
   // cumulative consumption instead of the leftover resource.
@@ -195,6 +194,14 @@ export function simulate(
         level: "danger",
       });
       state.nextThreatIn = rollNextSpawnInterval(state);
+    } else {
+      // The scheduler was eligible but spawnThreat() declined —
+      // either the threat hard cap is full or no archetype is
+      // available. Back off with a fresh interval; otherwise
+      // nextThreatIn keeps decrementing far below zero and the
+      // instant a slot opens a threat spawns with no spacing,
+      // defeating rollNextSpawnInterval's 6–30s cadence.
+      state.nextThreatIn = rollNextSpawnInterval(state);
     }
   }
   results.push(...resolveThreats(state, dt));
@@ -203,6 +210,22 @@ export function simulate(
   state.energy += (R * ENERGY_REGEN_PER_RADIATOR + ENERGY_REGEN_BASE) * dt;
 
   return { results, nextThreatId };
+}
+
+/**
+ * Harvester biomass-efficiency multiplier as a function of heat.
+ * Above the warning / critical / runaway thresholds (each expressed
+ * as a fraction of the current heat cap) production is progressively
+ * throttled. Shared by the simulation and `derivedStats` so the UI's
+ * rate readout can't lie about throughput during a heat crisis.
+ */
+export function heatEfficiency(state: GameState): number {
+  const cap = heatCap(state);
+  let e = 1;
+  if (state.heat > cap * HEAT_WARNING_FRAC)  e *= 0.7;
+  if (state.heat > cap * HEAT_CRITICAL_FRAC) e *= 0.5;
+  if (state.heat > cap * HEAT_RUNAWAY_FRAC)  e *= 0.25;
+  return e;
 }
 
 /** Convenience: did the player just win or lose? */
@@ -231,7 +254,11 @@ export function derivedStats(state: GameState): DerivedStats {
   const R = state.allocation.radiator;
   const S = state.allocation.seeker;
 
-  const harvesterBiomassRate = HARVESTER_OUTPUT * state.harvYieldMul * H;
+  // Mirror the simulation's heat-throttled biomass output so the
+  // ResourceGrid / VizPanel rates don't report full throughput while
+  // a heat crisis silently quarters production.
+  const harvesterBiomassRate =
+    HARVESTER_OUTPUT * state.harvYieldMul * H * heatEfficiency(state);
   const silicateRate = state.silAutoAdd + SILICATE_BASELINE_RATE;
   // Surface the *effective* auto-refine rate, not its ceiling. The
   // simulation caps auto-refine at min(silicates, energy / refine cost,

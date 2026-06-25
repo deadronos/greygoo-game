@@ -186,6 +186,11 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
     autoAlloc:      NON_NEG(asFiniteNumber(merged.autoAlloc,      0)),
     // threatSuppression is a probability-fraction; clamp to [0, 1].
     threatSuppression: Math.min(1, NON_NEG(asFiniteNumber(merged.threatSuppression, 0))),
+    // canRefine is the only non-numeric upgrade flag; coerce it to a
+    // real boolean so a tampered/migrated save carrying `1`,
+    // `"true"`, or any other truthy value can't silently bypass the
+    // Foundry Protocol upgrade gate.
+    canRefine: merged.canRefine === true,
   };
 
   const id =
