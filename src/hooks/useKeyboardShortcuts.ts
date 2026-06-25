@@ -65,6 +65,13 @@ export function useKeyboardShortcuts() {
           const morph: MorphKey = key === "h" ? "harvester" : key === "c" ? "radiator" : "seeker";
           const total =
             state.allocation.harvester + state.allocation.radiator + state.allocation.seeker;
+          // Shift+<morph> pulls one nanite back out of that morph; bare
+          // <morph> adds one in (only if there's room). This mirrors the
+          // AllocationRow +/- buttons so the keyboard isn't asymmetric.
+          if (e.shiftKey) {
+            store.changeAlloc(morph, -1);
+            return;
+          }
           if (state.allocation[morph] < state.nanites && total < state.nanites) {
             store.changeAlloc(morph, 1);
           }
