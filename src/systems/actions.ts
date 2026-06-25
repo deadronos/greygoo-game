@@ -146,7 +146,13 @@ export function replicateNanite(state: GameState): ActionOutcome {
   state.biomass -= REPLICATE_BIOMASS_COST;
   state.nanites += 1;
   state.heat += REPLICATE_HEAT_COST;
-  state.allocation.harvester += 1;
+  // Leave the new nanite unallocated. Defaulting to harvester was a
+  // silent build bias: every replicate pumped heat generators, so a
+  // cooling-heavy build could never grow into a higher radiator/seeker
+  // budget without rebalancing after every single click. The
+  // Automaton Replicator upgrade still hoovers idle nanites into
+  // harvesters when the player opts in; otherwise the player (or the
+  // allocation panel) places them.
   return {
     result: {
       ok: true,
@@ -179,7 +185,17 @@ export function changeAllocation(
   if (delta < 0 && current <= 0) {
     return { result: { ok: true, level: "" }, mutated: false };
   }
-  state.allocation[morph] = current + delta;
+  // Clamp the step to its actionable bounds so a future "x10" button
+  // (or any scripted caller) can't overshoot: positives can't push
+  // total past the swarm size, negatives can't go below zero. UI/+1
+  // buttons are unaffected but the guard keeps callers honest.
+  let step = delta;
+  if (step > 0) step = Math.min(step, state.nanites - total);
+  if (step < 0) step = Math.max(step, -current);
+  if (step === 0) {
+    return { result: { ok: true, level: "" }, mutated: false };
+  }
+  state.allocation[morph] = current + step;
   return { result: { ok: true, level: "" }, mutated: true };
 }
 

@@ -39,7 +39,7 @@ import {
   rollNextSpawnInterval,
   spawnThreat,
 } from "./combat";
-import type { ActionResult, GameState, ResourceKey } from "./types";
+import type { ActionResult, GameState, MorphKey, ResourceKey } from "./types";
 
 /**
  * Default per-tick timestep in seconds, used when the caller doesn't
@@ -63,15 +63,31 @@ export function simulate(
   const results: ActionResult[] = [];
 
   // ---- safety: clamp allocation if it exceeds swarm size --------------
+  // When damage (thermal/threat) shrinks the swarm below the
+  // allocated total, scale all three morphs proportionally back to
+  // <= nanites. Math.floor() drops fractional dust, leaving a
+  // spurious "idle" remainder that the auto-alloc loop below would
+  // otherwise vacuum into harvesters — biasing toward heat
+  // generators precisely during a crisis. Restore that dust to the
+  // morphs (fractional priority) so allocation sums exactly to the
+  // swarm size and the player's intended ratio survives the cut.
   const total =
     state.allocation.harvester +
     state.allocation.radiator +
     state.allocation.seeker;
   if (total > state.nanites) {
     const ratio = state.nanites / total;
-    state.allocation.harvester = Math.floor(state.allocation.harvester * ratio);
-    state.allocation.radiator = Math.floor(state.allocation.radiator * ratio);
-    state.allocation.seeker = Math.floor(state.allocation.seeker * ratio);
+    const morphs: MorphKey[] = ["harvester", "radiator", "seeker"];
+    const scaled = morphs.map((key) => {
+      const value = state.allocation[key] * ratio;
+      return { key, value, floor: Math.floor(value), frac: value - Math.floor(value) };
+    });
+    for (const s of scaled) state.allocation[s.key] = s.floor;
+    let leftover = state.nanites - scaled.reduce((a, x) => a + x.floor, 0);
+    const byFrac = [...scaled].sort((a, b) => b.frac - a.frac);
+    for (let i = 0; leftover > 0 && i < byFrac.length; i++, leftover--) {
+      state.allocation[byFrac[i]!.key] += 1;
+    }
   }
 
   // ---- auto-allocate idle nanites (Automaton Replicator upgrade) -----
@@ -217,7 +233,15 @@ export function derivedStats(state: GameState): DerivedStats {
 
   const harvesterBiomassRate = HARVESTER_OUTPUT * state.harvYieldMul * H;
   const silicateRate = state.silAutoAdd + SILICATE_BASELINE_RATE;
-  const metalRate = state.metAutoAdd + (state.canRefine ? 0.5 : 0);
+  // Surface the *effective* auto-refine rate, not its ceiling. The
+  // simulation caps auto-refine at min(silicates, energy / refine cost,
+  // 0.5/s); reporting 0.5/s while starved of silicates or energy
+  // would lie about the actual throughput and mask a silent stall.
+  const metalRate =
+    state.metAutoAdd +
+    (state.canRefine
+      ? Math.min(0.5, state.silicates, state.energy / METAL_REFINE_ENERGY)
+      : 0);
   const replicatorCost = Math.floor(REPLICATE_BASE_COST + state.nanites * REPLICATE_GROWTH);
   const bondEnergy = CLICK_ENERGY * state.clickEnergyMul;
   const bondHeat = CLICK_HEAT * state.clickHeatMul;

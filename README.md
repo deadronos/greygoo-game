@@ -40,7 +40,9 @@ Allocate your nanites between three morphologies:
 - **Radiators** — fractal surface area, passively dissipate heat.
 - **Hunter-Seekers** — combat white blood cells, EMP warheads, Blue Goo.
 
-A new nanite defaults to harvester. You can re-allocate at any time.
+A newly replicated nanite starts unallocated; assign it with the
+allocation controls (or the Automaton Replicator upgrade will assign
+idle nanites to harvesters automatically). You can re-allocate at any time.
 
 ## Controls
 
@@ -52,6 +54,9 @@ A new nanite defaults to harvester. You can re-allocate at any time.
 | `H`   | Allocate +1 harvester           |
 | `C`   | Allocate +1 radiator (cooling)  |
 | `S`   | Allocate +1 seeker              |
+| `Shift + H` | Pull −1 harvester        |
+| `Shift + C` | Pull −1 radiator         |
+| `Shift + S` | Pull −1 seeker           |
 | Right-click on BREAK BOND | Mine silicates |
 | `Enter` on title | Start |
 
