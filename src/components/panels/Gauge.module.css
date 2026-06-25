@@ -1,0 +1,63 @@
+.gauge {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 16, 0.6);
+  border-radius: 4px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.value {
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+.bar {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar.small {
+  height: 8px;
+}
+
+.fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease, background 0.4s ease;
+  position: relative;
+}
+
+.fill.heat {
+  background: linear-gradient(90deg, var(--heat-cool), var(--heat-mid), var(--heat-hot), var(--heat-melt));
+  box-shadow: 0 0 14px currentColor;
+}
+
+.fill.eco {
+  background: linear-gradient(90deg, #2c5d3a, var(--bio), #b3ff9c);
+  box-shadow: 0 0 14px rgba(123, 214, 106, 0.5);
+}
+
+.fill.awareness {
+  background: linear-gradient(90deg, #4a3a1a, var(--warn), var(--danger));
+  box-shadow: 0 0 10px rgba(255, 77, 94, 0.5);
+}
+
+.hint {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  min-height: 14px;
+}

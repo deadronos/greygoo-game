@@ -1,0 +1,70 @@
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(20, 28, 36, 0.85), rgba(10, 16, 22, 0.85));
+  border-radius: 4px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-glow);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mark {
+  font-size: 30px;
+  color: var(--accent);
+  text-shadow: 0 0 18px var(--accent);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; text-shadow: 0 0 30px var(--accent); }
+}
+
+.title {
+  font-size: 16px;
+  color: var(--text-bright);
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+
+.sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pill {
+  padding: 4px 10px;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-bright);
+  letter-spacing: 0.1em;
+}
+
+.saveStatus {
+  margin-left: 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+}
+
+.saveStatus b {
+  color: var(--accent);
+}

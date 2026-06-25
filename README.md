@@ -2,18 +2,22 @@
 
 > *You are Patient Zero. The Laws of Thermodynamics are the enemy.*
 
-A single-file web game about a self-replicating nanite swarm trying to consume
-the biosphere. Every bond you break generates heat. Every gram of biomass you
-eat cooks you a little more. Balance your diet, allocate your swarm, and outwit
-human countermeasures.
+A self-replicating nanite swarm simulation. Every bond you break generates
+heat. Every gram of biomass you eat cooks you a little more. Balance your
+diet, allocate your swarm, and outwit human countermeasures.
 
 ## Play
 
-Open `index.html` in any modern browser. That's it — no build, no dependencies,
-no server. (A local server is fine too: `python3 -m http.server 8000`.)
+```bash
+npm install
+npm run dev
+```
 
-The game autosaves to `localStorage` every 5 seconds. There is a **RESUME
-PREVIOUS RUN** button on the title screen when a save exists.
+The dev server opens on `http://localhost:5173`. To produce a static
+build: `npm run build`, then `npm run preview` to serve `dist/`.
+
+The game autosaves to `localStorage` every 5 seconds. There is a
+**RESUME PREVIOUS RUN** button on the title screen when a save exists.
 
 ## The core conflict
 
@@ -25,14 +29,8 @@ PREVIOUS RUN** button on the title screen when a save exists.
 | Energy     | Currency for replication.                               |
 | Heat       | The enemy. Climbs with replication, kills the swarm.    |
 
-Every click of **BREAK BOND** is an exothermic reaction. Every harvested
-organic bond heats the swarm. The only way to dissipate heat is *fractal
-surface area* — your **Radiators** — and *endothermic mining* of silicate
-rock. Refined metals are the strongest coolant but require the **Foundry
-Protocol** upgrade to produce.
-
-If heat exceeds the thermal ceiling, your diamondoid chassis anneals. You
-become slag. Game over.
+If heat exceeds the thermal ceiling, your diamondoid chassis anneals.
+You become slag. Game over.
 
 ## The swarm
 
@@ -40,28 +38,9 @@ Allocate your nanites between three morphologies:
 
 - **Harvesters** — break organic bonds, produce biomass and heat.
 - **Radiators** — fractal surface area, passively dissipate heat.
-- **Hunter-Seekers** — combat white blood cells, EMP warheads, and Blue Goo.
+- **Hunter-Seekers** — combat white blood cells, EMP warheads, Blue Goo.
 
-A new nanite defaults to harvester. You can re-allocate at any time using
-the `+` / `−` controls. Replicated nanites are also added automatically.
-
-## Human countermeasures
-
-As you spread, **Human Awareness** grows. Once it crosses thresholds, threats
-will spawn and attack your swarm:
-
-- **Tier 1** — Macrophage Swarms, Interferon Bursts (innate immune)
-- **Tier 2** — EMP Warheads, Blue Goo Platoons (military response)
-- **Tier 3** — White-Blood Hordes, Thermite Strikes (industrial-scale)
-- **Tier 4** — Automaton Forges (rival nanite foundries)
-
-Allocating Hunter-Seekers is the only way to suppress them. Threats that
-outpace your seekers will damage your swarm directly.
-
-## Win
-
-Reach **100% ecophagy** — total consumption of the biosphere. The simulation
-then ends with an "ECOPHAGY ACHIEVED" screen and your run statistics.
+A new nanite defaults to harvester. You can re-allocate at any time.
 
 ## Controls
 
@@ -76,8 +55,54 @@ then ends with an "ECOPHAGY ACHIEVED" screen and your run statistics.
 | Right-click on BREAK BOND | Mine silicates |
 | `Enter` on title | Start |
 
-## Files
+## Architecture
 
-- `index.html` — markup
-- `styles.css` — visual system
-- `game.js`   — all game logic in one IIFE
+The codebase is split into two halves:
+
+### Systems layer — `src/systems/`
+
+Pure game logic, no React, no DOM. Anything in here can be unit-tested
+without a browser. Each module owns one concern:
+
+- `constants.ts` — every tuning number lives here.
+- `types.ts` — TypeScript shapes (`GameState`, `Threat`, `UpgradeDef`, …).
+- `state.ts` — initial-state factory + save merging.
+- `upgrades.ts` — declarative upgrade catalog.
+- `threats.ts` — threat archetype catalog.
+- `actions.ts` — player action handlers (breakBond, mine, refine, …).
+- `combat.ts` — threat spawning and resolution.
+- `simulation.ts` — the per-tick update.
+- `save.ts` — localStorage persistence.
+- `format.ts` — number/time formatters.
+
+### UI layer — `src/components/` + `src/hooks/`
+
+Pure presentation. Components read from the Zustand store but never call
+game logic directly; the store is the single bridge between the systems
+layer and React.
+
+- `panels/` — `Panel`, `Gauge`, `Stat`, `Button` (mini / action / bond).
+- `resources/` — `ResourceCard`, `ResourceGrid`.
+- `actions/` — `PrimaryAction` (bond button), `SecondaryActions`.
+- `allocation/` — `AllocationRow`, `AllocationPanel`.
+- `upgrades/` — `UpgradeCard`, `UpgradeList`.
+- `threats/` — `ThreatCard`, `ThreatList`.
+- `viz/` — `BiosphereViz` (canvas), `VizPanel` (wrapper).
+- `log/` — `EventLog`.
+- `gauges/` — `Gauges` (heat + ecophagy).
+- `telemetry/` — `Telemetry` (stats grid).
+- `topbar/` — `TopBar`.
+- `overlays/` — `Overlay` base + `IntroOverlay`, `WinOverlay`, `LoseOverlay`.
+- `hooks/` — `useGameLoop`, `useAutosave`, `useKeyboardShortcuts`, `useBootCheck`.
+- `store/gameStore.ts` — Zustand store that wires the systems layer to the UI.
+- `App.tsx` — composes the screen tree, mounts the hooks.
+- `main.tsx` — React entry.
+
+Styling: every component has a co-located `.module.css` file. Only
+global rules (CSS variables, scanlines, `.hidden`, `.click-burst`,
+`.critical-flash`) live in `src/styles/index.css`.
+
+## Files (legacy reference)
+
+The original single-file `game.js` + `styles.css` were replaced by this
+rewrite. See `git log` for the history.

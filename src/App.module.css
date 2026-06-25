@@ -1,0 +1,40 @@
+.game {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 14px 18px 26px;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 1200px) {
+  .main { grid-template-columns: 1fr 1fr; }
+  .center { grid-column: span 2; }
+}
+
+@media (max-width: 800px) {
+  .main { grid-template-columns: 1fr; }
+  .center { grid-column: span 1; }
+}
+
+.col,
+.center,
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 8px 12px;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--line);
+  letter-spacing: 0.1em;
+}

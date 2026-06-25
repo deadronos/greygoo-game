@@ -1,0 +1,19 @@
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 4px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.04);
+}
+
+.label {
+  color: var(--text-dim);
+}
+
+.value {
+  color: var(--text-bright);
+}
+
+.value.accent { color: var(--accent); }
+.value.warn   { color: var(--warn); }
+.value.danger { color: var(--danger); }
+.value.good   { color: var(--bio); }

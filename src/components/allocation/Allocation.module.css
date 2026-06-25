@@ -1,0 +1,84 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+.info { flex: 1; }
+
+.name {
+  font-size: 12px;
+  color: var(--text-bright);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.pip {
+  font-size: 10px;
+  color: var(--accent);
+  margin-left: 4px;
+}
+
+.desc {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.controls button {
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid var(--line-bright);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.1s;
+}
+
+.controls button:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.count {
+  min-width: 30px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.footer b {
+  color: var(--text-bright);
+}

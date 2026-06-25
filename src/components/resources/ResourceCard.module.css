@@ -1,0 +1,51 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(8, 12, 16, 0.7);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.icon {
+  font-size: 26px;
+  text-shadow: 0 0 12px currentColor;
+}
+
+.info { flex: 1; }
+
+.name {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+}
+
+.value {
+  font-size: 18px;
+  color: var(--text-bright);
+  font-weight: 700;
+}
+
+.rate {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.pulse {
+  transition: box-shadow 0.1s;
+  box-shadow: 0 0 20px rgba(88, 225, 196, 0.5);
+}
