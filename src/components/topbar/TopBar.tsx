@@ -1,8 +1,11 @@
 /**
  * Top header: brand + status pills + save/reset buttons.
+ *
+ * Subscribes to the metrics slice (elapsed / ecophagy / awareness) with
+ * shallow equality so it skips re-renders on unrelated tick updates.
  */
 
-import { selectSaveFlash, selectState, useGameStore } from "@/store/gameStore";
+import { selectMetrics, selectSaveFlash, shallow, useGameStore } from "@/store/gameStore";
 import { MiniButton } from "@/components/panels/Button";
 import { fmtTime } from "@/systems/format";
 import { AWARENESS_LABELS } from "@/systems/constants";
@@ -11,12 +14,12 @@ import { pickBand } from "@/systems/format";
 import styles from "./TopBar.module.css";
 
 export function TopBar() {
-  const state = useGameStore(selectState);
+  const { elapsed, ecophagy, awareness } = useGameStore(selectMetrics, shallow);
   const saveFlash = useGameStore(selectSaveFlash);
   const forceSave = useGameStore((s) => s.forceSave);
   const wipeAndRestart = useGameStore((s) => s.wipeAndRestart);
 
-  const facility = pickBand(AWARENESS_LABELS, state.awareness);
+  const facility = pickBand(AWARENESS_LABELS, awareness);
 
   function onReset() {
     if (window.confirm("Wipe the swarm and start over? This deletes your save.")) {
@@ -37,8 +40,8 @@ export function TopBar() {
         </div>
       </div>
       <div className={styles.right}>
-        <div className={styles.pill}>T+{fmtTime(state.elapsed)}</div>
-        <div className={styles.pill}>BIOSPHERE {(100 - state.ecophagy).toFixed(1)}%</div>
+        <div className={styles.pill}>T+{fmtTime(elapsed)}</div>
+        <div className={styles.pill}>BIOSPHERE {(100 - ecophagy).toFixed(1)}%</div>
         <MiniButton onClick={forceSave} title="Force save">SAVE</MiniButton>
         <MiniButton variant="danger" onClick={onReset} title="Reset run">RESET</MiniButton>
         <div className={styles.saveStatus}>Save: <b>{saveFlash}</b></div>

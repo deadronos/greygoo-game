@@ -430,12 +430,16 @@ export const selectResources = (s: GameStore): ResourcesSlice => ({
 });
 
 export interface MetricsSlice {
+  // live telemetry
   heat: number;
   nanites: number;
   ecophagy: number;
   awareness: number;
   elapsed: number;
+  // lifetime counters
   bonds: number;
+  threatsKilled: number;
+  thermalEvents: number;
   biomassHarvested: number;
 }
 export const selectMetrics = (s: GameStore): MetricsSlice => ({
@@ -445,6 +449,8 @@ export const selectMetrics = (s: GameStore): MetricsSlice => ({
   awareness: s.state.awareness,
   elapsed: s.state.elapsed,
   bonds: s.state.bonds,
+  threatsKilled: s.state.threatsKilled,
+  thermalEvents: s.state.thermalEvents,
   biomassHarvested: s.state.biomassHarvested,
 });
 
@@ -461,3 +467,6 @@ export const selectAllocationSlice = (s: GameStore): AllocationSlice => ({
 
 export const selectThreats = (s: GameStore): Threat[] => s.state.threats;
 export const selectUpgrades = (s: GameStore): UpgradeState => s.state.upgrades;
+
+/** Just `awareness` — used by ThreatList, TopBar's facility label, etc. */
+export const selectAwareness = (s: GameStore): number => s.state.awareness;

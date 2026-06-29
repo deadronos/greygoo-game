@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   selectAllocationSlice,
+  selectAwareness,
   selectDerived,
   selectMetrics,
   selectResources,
@@ -73,6 +74,23 @@ describe("slice selectors", () => {
     expect(m.ecophagy).toBe(0);
     expect(m.awareness).toBe(0);
     expect(m.elapsed).toBe(0);
+    expect(m.bonds).toBe(0);
+    expect(m.threatsKilled).toBe(0);
+    expect(m.thermalEvents).toBe(0);
+    expect(m.biomassHarvested).toBe(0);
+  });
+
+  it("selectMetrics reflects a lifetime counter mutation", () => {
+    const before = selectMetrics(useGameStore.getState());
+    useGameStore.setState((s) => ({ state: { ...s.state, threatsKilled: s.state.threatsKilled + 3 } }));
+    const after = selectMetrics(useGameStore.getState());
+    expect(after.threatsKilled).toBe(before.threatsKilled + 3);
+  });
+
+  it("selectAwareness is a scalar projection", () => {
+    expect(selectAwareness(useGameStore.getState())).toBe(0);
+    useGameStore.setState((s) => ({ state: { ...s.state, awareness: s.state.awareness + 7 } }));
+    expect(selectAwareness(useGameStore.getState())).toBe(7);
   });
 
   it("selectAllocationSlice exposes allocation + nanites", () => {
