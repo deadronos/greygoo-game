@@ -137,12 +137,12 @@ describe("mergeSave — numeric clamps", () => {
 
 describe("mergeSave — nextThreatId", () => {
   it("defaults to 1 when missing", () => {
-    const r = mergeSave({ state: {} });
+    const r = mergeSave({} as Partial<SaveData>);
     expect(r.nextThreatId).toBe(1);
   });
 
   it("clamps non-finite values to 1", () => {
-    const r = mergeSave({ state: {}, nextThreatId: "abc" as never });
+    const r = mergeSave({ nextThreatId: "abc" } as unknown as Partial<SaveData>);
     expect(r.nextThreatId).toBe(1);
   });
 });
@@ -180,7 +180,6 @@ describe("mergeSave — round-trip preserves basics", () => {
     fresh.biomass = 1234;
     fresh.nanites = 42;
     const envelope: SaveData = {
-      version: 2,
       state: fresh,
       nextThreatId: 99,
     };
