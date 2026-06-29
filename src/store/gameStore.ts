@@ -31,11 +31,14 @@ import type { DerivedStats } from "@/systems/simulation";
 import { createInitialState, heatCap } from "@/systems/state";
 import { fmtTime, nowHMS } from "@/systems/format";
 import type {
+  Allocation,
   GameState,
   LogEntry,
   LogLevel,
   MorphKey,
   ResourceKey,
+  Threat,
+  UpgradeState,
 } from "@/systems/types";
 
 export type Screen = "intro" | "play" | "win" | "lose";
@@ -390,3 +393,60 @@ export const selectDerived = (s: GameStore): DerivedStats => {
 
 // Re-export the shallow comparator so call sites can opt in.
 export { shallow };
+
+// --- slice selectors ------------------------------------------------------
+// Slice selectors project the game state's relevant fields into a small
+// object suitable for subscription via `useGameStore(slice, shallow)`.
+// Each call returns a fresh object — shallow equality is what dedupes
+// re-renders, so the consumer must pass `shallow` (already exported
+// above) at the call site.
+//
+// Memoizing by the top-level `state` ref would be unsafe here: every
+// simulation tick bumps the state ref even when the slice the consumer
+// cares about didn't change.
+
+export interface ResourcesSlice {
+  biomass: number;
+  silicates: number;
+  metals: number;
+  energy: number;
+}
+export const selectResources = (s: GameStore): ResourcesSlice => ({
+  biomass: s.state.biomass,
+  silicates: s.state.silicates,
+  metals: s.state.metals,
+  energy: s.state.energy,
+});
+
+export interface MetricsSlice {
+  heat: number;
+  nanites: number;
+  ecophagy: number;
+  awareness: number;
+  elapsed: number;
+  bonds: number;
+  biomassHarvested: number;
+}
+export const selectMetrics = (s: GameStore): MetricsSlice => ({
+  heat: s.state.heat,
+  nanites: s.state.nanites,
+  ecophagy: s.state.ecophagy,
+  awareness: s.state.awareness,
+  elapsed: s.state.elapsed,
+  bonds: s.state.bonds,
+  biomassHarvested: s.state.biomassHarvested,
+});
+
+export interface AllocationSlice {
+  allocation: Allocation;
+  nanites: number;
+  autoAlloc: number;
+}
+export const selectAllocationSlice = (s: GameStore): AllocationSlice => ({
+  allocation: s.state.allocation,
+  nanites: s.state.nanites,
+  autoAlloc: s.state.autoAlloc,
+});
+
+export const selectThreats = (s: GameStore): Threat[] => s.state.threats;
+export const selectUpgrades = (s: GameStore): UpgradeState => s.state.upgrades;

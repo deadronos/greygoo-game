@@ -3,7 +3,7 @@
  */
 
 import { Panel } from "@/components/panels/Panel";
-import { selectState, useGameStore } from "@/store/gameStore";
+import { selectAllocationSlice, shallow, useGameStore } from "@/store/gameStore";
 
 import { AllocationRow } from "./AllocationRow";
 import styles from "./Allocation.module.css";
@@ -27,13 +27,16 @@ const MORPHS = [
 ];
 
 export function AllocationPanel() {
-  const state = useGameStore(selectState);
+  // Subscribe to the {allocation, nanites, autoAlloc} slice only — biomass
+  // / energy / threats etc. don't reach this component, so it skips
+  // re-renders on unrelated tick-driven state updates.
+  const { allocation, nanites } = useGameStore(
+    selectAllocationSlice,
+    shallow,
+  );
   const changeAlloc = useGameStore((s) => s.changeAlloc);
 
-  const total =
-    state.allocation.harvester +
-    state.allocation.radiator +
-    state.allocation.seeker;
+  const total = allocation.harvester + allocation.radiator + allocation.seeker;
 
   return (
     <Panel title="NANITE ALLOCATION">
@@ -43,15 +46,15 @@ export function AllocationPanel() {
             key={m.key}
             name={m.name}
             desc={m.desc}
-            count={state.allocation[m.key]}
-            canAdd={total < state.nanites}
-            canRemove={state.allocation[m.key] > 0}
+            count={allocation[m.key]}
+            canAdd={total < nanites}
+            canRemove={allocation[m.key] > 0}
             onChange={(delta) => changeAlloc(m.key, delta)}
           />
         ))}
         <div className={styles.footer}>
-          <span>Unallocated: <b>{state.nanites - total}</b></span>
-          <span>Total swarm: <b>{state.nanites}</b></span>
+          <span>Unallocated: <b>{nanites - total}</b></span>
+          <span>Total swarm: <b>{nanites}</b></span>
         </div>
       </div>
     </Panel>
