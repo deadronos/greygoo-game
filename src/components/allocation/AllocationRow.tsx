@@ -25,9 +25,17 @@ export function AllocationRow({ name, desc, count, canAdd, canRemove, onChange }
         <div className={styles.desc}>{desc}</div>
       </div>
       <div className={styles.controls}>
-        <button onClick={() => onChange(-1)} disabled={!canRemove}>−</button>
-        <span className={styles.count}>{count}</span>
-        <button onClick={() => onChange(1)} disabled={!canAdd}>+</button>
+        <button
+          onClick={() => onChange(-1)}
+          disabled={!canRemove}
+          aria-label={`Decrease ${name}`}
+        >−</button>
+        <span className={styles.count} aria-live="polite">{count}</span>
+        <button
+          onClick={() => onChange(1)}
+          disabled={!canAdd}
+          aria-label={`Increase ${name}`}
+        >+</button>
       </div>
     </div>
   );

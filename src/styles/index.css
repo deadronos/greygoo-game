@@ -116,3 +116,28 @@ body {
   0%, 100% { background-color: rgba(255, 77, 94, 0); }
   50%      { background-color: rgba(255, 77, 94, 0.18); }
 }
+
+/* =====================================================
+   Motion safety
+   ----------------------------------------------------------
+   Honor the user's reduced-motion preference. Disables the
+   scanline flicker, the critical-flash strobe, and any
+   non-essential animations / transitions site-wide.
+   ===================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Hide the persistent scanline overlay entirely — it's flicker-only
+     decoration with no semantic content. */
+  #scanlines { display: none !important; }
+  /* Replace the strobing critical-flash with a static, lower-opacity
+     overlay so the heat crisis is still visible without pulses. */
+  body.critical-flash {
+    animation: none !important;
+    box-shadow: inset 0 0 200px rgba(255, 40, 100, 0.25);
+  }
+}
