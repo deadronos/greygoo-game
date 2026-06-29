@@ -95,3 +95,84 @@
 }
 
 .btn + .btn { margin-top: 8px; }
+
+/* ----- Help overlay --------------------------------------------------- */
+
+.box.help {
+  text-align: left;
+  border-color: var(--accent);
+  max-width: 640px;
+}
+
+.box.help h2 {
+  text-align: center;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  margin: 0 0 14px 0;
+  font-size: 18px;
+}
+
+.helpLore {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  margin: 0 0 18px;
+}
+
+.helpSection {
+  margin-bottom: 14px;
+}
+
+.helpSection h3 {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent-dim);
+  margin: 0 0 8px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.helpTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.helpTable td {
+  padding: 4px 8px 4px 0;
+  vertical-align: top;
+}
+
+.helpKeys {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.helpKeys .kbd + .kbd {
+  margin-left: 4px;
+}
+
+.kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  background: rgba(88, 225, 196, 0.06);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.helpFooter {
+  margin: 14px 0 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  text-align: center;
+}
+
+.box.help .btn {
+  display: block;
+  margin: 0 auto;
+}

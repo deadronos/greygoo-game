@@ -64,6 +64,7 @@ interface GameStore {
   winStats: string;
   loseStats: string;
   saveFlash: string;
+  helpOpen: boolean;
 
   // ---- lifecycle ------------------------------------------------------
   boot: () => void;
@@ -86,6 +87,8 @@ interface GameStore {
 
   // ---- helpers --------------------------------------------------------
   forceSave: () => void;
+  toggleHelp: () => void;
+  closeHelp: () => void;
 }
 
 let logIdCounter = 1;
@@ -177,6 +180,7 @@ export const useGameStore = create<GameStore>((set, get) => {
     winStats: "",
     loseStats: "",
     saveFlash: "localStorage",
+    helpOpen: false,
 
     boot: () => {
       const loaded = loadGame();
@@ -192,6 +196,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         log: [],
         pulses: [],
         screen: "play",
+        helpOpen: false,
       });
       set((s) => {
         let log = s.log;
@@ -212,6 +217,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         log: [],
         pulses: [],
         screen: "play",
+        helpOpen: false,
       });
       set((s) => {
         let log = s.log;
@@ -232,6 +238,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         loseReason: "",
         winStats: "",
         loseStats: "",
+        helpOpen: false,
       });
     },
 
@@ -247,6 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => {
         loseReason: "",
         winStats: "",
         loseStats: "",
+        helpOpen: false,
       });
       set((s) => {
         let log = s.log;
@@ -260,6 +268,9 @@ export const useGameStore = create<GameStore>((set, get) => {
       set({ hasSave: false });
       get().restart();
     },
+
+    toggleHelp: () => set((s) => ({ helpOpen: !s.helpOpen })),
+    closeHelp: () => set({ helpOpen: false }),
 
     clickBreakBond: () => {
       const { state } = get();

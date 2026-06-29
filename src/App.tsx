@@ -20,6 +20,7 @@ import { TopBar } from "@/components/topbar/TopBar";
 import { UpgradeList } from "@/components/upgrades/UpgradeCard";
 import { VizPanel } from "@/components/viz/VizPanel";
 import { WinOverlay } from "@/components/overlays/WinOverlay";
+import { HelpOverlay } from "@/components/overlays/HelpOverlay";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useBootCheck } from "@/hooks/useBootCheck";
 import { useGameLoop } from "@/hooks/useGameLoop";
@@ -69,6 +70,7 @@ function PlayScreen() {
 
 export function App() {
   const screen = useGameStore(selectScreen);
+  const helpOpen = useGameStore((s) => s.helpOpen);
 
   useBootCheck();
   useGameLoop();
@@ -81,6 +83,7 @@ export function App() {
       {screen === "intro" && <IntroOverlay />}
       {screen === "win" && <WinOverlay />}
       {screen === "lose" && <LoseOverlay />}
+      {helpOpen && <HelpOverlay />}
     </>
   );
 }
