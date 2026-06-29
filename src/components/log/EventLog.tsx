@@ -20,7 +20,19 @@ export function EventLog() {
 
   return (
     <Panel title="EVENT LOG">
-      <div ref={ref} className={styles.log}>
+      {/*
+        role="log" + aria-live="polite" tells assistive tech to read out
+        new entries as they arrive. aria-atomic="false" lets each new
+        line be announced on its own instead of re-reading the whole log.
+      */}
+      <div
+        ref={ref}
+        className={styles.log}
+        role="log"
+        aria-live="polite"
+        aria-atomic="false"
+        aria-label="Simulation event log"
+      >
         {log.map((entry) => (
           <div key={entry.id} className={`${styles.line} ${styles[entry.level] || ""}`}>
             <span className={styles.time}>{entry.time}</span>

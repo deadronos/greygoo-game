@@ -18,18 +18,22 @@ function isValidThreat(t: unknown): t is Threat {
   if (!t || typeof t !== "object") return false;
   const o = t as Record<string, unknown>;
   if (typeof o.id !== "number" || !Number.isFinite(o.id)) return false;
-  if (typeof o.hp !== "number" || !Number.isFinite(o.hp)) return false;
-  if (typeof o.maxHp !== "number" || !Number.isFinite(o.maxHp)) return false;
-  if (typeof o.dmg !== "number" || !Number.isFinite(o.dmg)) return false;
+  if (typeof o.hp !== "number" || !Number.isFinite(o.hp) || o.hp <= 0) return false;
+  if (typeof o.maxHp !== "number" || !Number.isFinite(o.maxHp) || o.maxHp <= 0) return false;
+  if (typeof o.dmg !== "number" || !Number.isFinite(o.dmg) || o.dmg < 0) return false;
   if (!o.type || typeof o.type !== "object") return false;
   const tt = o.type as Record<string, unknown>;
   return (
     typeof tt.tier === "number"
+    && [1, 2, 3, 4].includes(tt.tier)
     && typeof tt.name === "string"
     && typeof tt.desc === "string"
     && typeof tt.maxHp === "number"
+    && tt.maxHp > 0
     && typeof tt.dmg === "number"
+    && tt.dmg >= 0
     && typeof tt.spawn === "number"
+    && tt.spawn > 0
   );
 }
 
@@ -128,11 +132,13 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
   // `Math.max(0, "abc")` returns NaN, which then propagates through
   // the simulation; route every key through asFiniteNumber so a
   // tampered save with `"harvester": "abc"` falls back to the initial
-  // value instead of producing NaN.
+  // value instead of producing NaN. Also clamp negatives to zero so a
+  // tampered save can't put the swarm into an impossible negative
+  // allocation that the simulation would treat as "fully unallocated".
   merged.allocation = {
-    harvester: asFiniteNumber(readAllocField(merged.allocation, "harvester"), base.allocation.harvester),
-    radiator:  asFiniteNumber(readAllocField(merged.allocation, "radiator"),  base.allocation.radiator),
-    seeker:    asFiniteNumber(readAllocField(merged.allocation, "seeker"),    base.allocation.seeker),
+    harvester: NON_NEG(asFiniteNumber(readAllocField(merged.allocation, "harvester"), base.allocation.harvester)),
+    radiator:  NON_NEG(asFiniteNumber(readAllocField(merged.allocation, "radiator"),  base.allocation.radiator)),
+    seeker:    NON_NEG(asFiniteNumber(readAllocField(merged.allocation, "seeker"),    base.allocation.seeker)),
   };
 
   // Drop malformed threats so a tampered save can't crash the sim.
@@ -160,10 +166,10 @@ export function mergeSave(partial: Partial<SaveData>): { state: GameState; nextT
   const state: GameState = {
     ...base,
     ...merged,
-    biomass:    asFiniteNumber(merged.biomass,    base.biomass),
-    silicates:  asFiniteNumber(merged.silicates,  base.silicates),
-    metals:     asFiniteNumber(merged.metals,     base.metals),
-    energy:     asFiniteNumber(merged.energy,     base.energy),
+    biomass:    NON_NEG(asFiniteNumber(merged.biomass,    base.biomass)),
+    silicates:  NON_NEG(asFiniteNumber(merged.silicates,  base.silicates)),
+    metals:     NON_NEG(asFiniteNumber(merged.metals,     base.metals)),
+    energy:     NON_NEG(asFiniteNumber(merged.energy,     base.energy)),
     heat:       asFiniteNumber(merged.heat,       base.heat),
     nanites:    asFiniteNumber(merged.nanites,    base.nanites),
     ecophagy:   asFiniteNumber(merged.ecophagy,   base.ecophagy),

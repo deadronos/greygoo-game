@@ -8,7 +8,14 @@
 // --- Loops & timing -------------------------------------------------------
 export const TICK_MS = 100;
 export const AUTOSAVE_MS = 5_000;
-export const STORAGE_KEY = "entropic_devourer_save_v2";
+export const STORAGE_KEY = "entropic_devourer_save";
+
+/**
+ * Bumped any time the GameState or SaveData shape changes in a way
+ * that `mergeSave` cannot recover from by itself (e.g. type renames).
+ * Pure additive defaults in `mergeSave` don't require a bump.
+ */
+export const CURRENT_SAVE_VERSION = 2;
 
 // --- Heat thresholds ------------------------------------------------------
 export const HEAT_CAP_BASE = 100;

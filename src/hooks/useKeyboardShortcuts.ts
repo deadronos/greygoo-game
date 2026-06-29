@@ -30,13 +30,36 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Help overlay takes precedence over gameplay shortcuts while
+      // open, so the only key that does anything is Escape (close).
+      const liveStore = useGameStore.getState();
+      if (liveStore.helpOpen) {
+        if (e.key === "Escape" || e.key === "?") {
+          e.preventDefault();
+          liveStore.closeHelp();
+        }
+        return;
+      }
+
+      // `?` toggles the help cheatsheet from any play screen. We test
+      // for the literal character (Shift+/) so it works regardless of
+      // keyboard layout, but bail when the user is typing in a field
+      // (e.g. clicking through a future text input).
+      if (screen !== "intro" && (e.key === "?" || e.key === "/")) {
+        if (!e.shiftKey) return; // bare `/` isn't the binding
+        if (!isTypingTarget(e.target)) {
+          e.preventDefault();
+          liveStore.toggleHelp();
+          return;
+        }
+      }
+
       // Intro screen: Enter / Space begin a new game.
       if (screen === "intro") {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          const store = useGameStore.getState();
-          if (store.hasSave) store.resumeGame();
-          else store.beginNewGame();
+          if (liveStore.hasSave) liveStore.resumeGame();
+          else liveStore.beginNewGame();
         }
         return;
       }
@@ -44,20 +67,19 @@ export function useKeyboardShortcuts() {
       if (isTypingTarget(e.target)) return;
 
       const key = e.key.toLowerCase();
-      const store = useGameStore.getState();
-      const { state } = store;
+      const { state } = liveStore;
 
       switch (key) {
         case " ":
         case "b":
-          store.clickBreakBond();
+          liveStore.clickBreakBond();
           e.preventDefault();
           return;
         case "m":
-          store.clickMine();
+          liveStore.clickMine();
           return;
         case "r":
-          if (e.shiftKey) store.clickRefine();
+          if (e.shiftKey) liveStore.clickRefine();
           return;
         case "h":
         case "c":
@@ -69,11 +91,11 @@ export function useKeyboardShortcuts() {
           // <morph> adds one in (only if there's room). This mirrors the
           // AllocationRow +/- buttons so the keyboard isn't asymmetric.
           if (e.shiftKey) {
-            store.changeAlloc(morph, -1);
+            liveStore.changeAlloc(morph, -1);
             return;
           }
           if (state.allocation[morph] < state.nanites && total < state.nanites) {
-            store.changeAlloc(morph, 1);
+            liveStore.changeAlloc(morph, 1);
           }
           return;
         }

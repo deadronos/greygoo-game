@@ -2,9 +2,13 @@
  * Threats panel.
  *
  * Renders all active threats and the human-awareness meter below them.
+ *
+ * Subscribes only to the threats array + awareness (a thin scalar).
+ * Unrelated state updates (resources, metrics counters, ecophagy,
+ * ...) no longer reach this component.
  */
 
-import { selectState, useGameStore } from "@/store/gameStore";
+import { selectAwareness, selectThreats, useGameStore } from "@/store/gameStore";
 import { AWARENESS_HINT_BANDS, AWARENESS_LABELS } from "@/systems/constants";
 import { pickBand } from "@/systems/format";
 import { Gauge } from "@/components/panels/Gauge";
@@ -35,17 +39,19 @@ export function ThreatCard({ threat }: ThreatCardProps) {
 }
 
 export function ThreatList() {
-  const state = useGameStore(selectState);
-  const facility = pickBand(AWARENESS_LABELS, state.awareness);
-  const hint = pickBand(AWARENESS_HINT_BANDS, state.awareness);
+  const threats = useGameStore(selectThreats);
+  const awareness = useGameStore(selectAwareness);
+
+  const facility = pickBand(AWARENESS_LABELS, awareness);
+  const hint = pickBand(AWARENESS_HINT_BANDS, awareness);
 
   return (
     <div>
       <div className={styles.list}>
-        {state.threats.length === 0 ? (
+        {threats.length === 0 ? (
           <div className={styles.empty}>No active threats. Stay hungry.</div>
         ) : (
-          state.threats.map((t) => <ThreatCard key={t.id} threat={t} />)
+          threats.map((t) => <ThreatCard key={t.id} threat={t} />)
         )}
       </div>
       <div className={styles.meter}>
@@ -53,7 +59,7 @@ export function ThreatList() {
         <Gauge
           label=""
           valueText=""
-          fillPercent={state.awareness}
+          fillPercent={awareness}
           variant="awareness"
           small
         />
