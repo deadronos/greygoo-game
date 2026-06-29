@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { CURRENT_SAVE_VERSION } from "./constants";
 import { createInitialState, heatCap, mergeSave } from "./state";
 import type { SaveData } from "./types";
 
@@ -180,6 +181,7 @@ describe("mergeSave — round-trip preserves basics", () => {
     fresh.biomass = 1234;
     fresh.nanites = 42;
     const envelope: SaveData = {
+      version: CURRENT_SAVE_VERSION,
       state: fresh,
       nextThreatId: 99,
     };

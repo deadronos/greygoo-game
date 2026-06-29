@@ -130,6 +130,8 @@ export interface ActionResult {
 
 /** Persisted save envelope. */
 export interface SaveData {
+  /** Schema version. See `CURRENT_SAVE_VERSION` in constants.ts. */
+  version: number;
   state: GameState;
   nextThreatId: number;
 }
